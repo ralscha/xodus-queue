@@ -7,7 +7,7 @@ env:
   - SONATYPE_USERNAME=ralscha23
 
 before_install:
-  - chmod +x ralscha/xodus-queue/mvwn
+  - chmod +x mvnw
 
 after_success:
 - python addsettings.py
