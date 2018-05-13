@@ -7,7 +7,7 @@ env:
   - SONATYPE_USERNAME=ralscha23
 
 before_install:
-  - chmod +x mvwn
+  - chmod +x ./mvwn
 
 after_success:
 - python addsettings.py
