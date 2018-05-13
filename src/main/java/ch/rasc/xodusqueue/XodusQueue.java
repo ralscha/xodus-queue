@@ -50,8 +50,6 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 
 	private final XodusQueueSerializer<T> serializer;
 
-	private long key = 0;
-
 	@SuppressWarnings("unchecked")
 	public XodusQueue(final String databaseDir, final Class<T> entryClass) {
 		this.env = Environments.newInstance(databaseDir);
@@ -106,11 +104,7 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES,
 					txn);
 
-			if (store.count(txn) == 0) {
-				this.key = 0;
-			}
-
-			store.putRight(txn, LongBinding.longToEntry(this.key++),
+			store.putRight(txn, LongBinding.longToEntry(store.count(txn) + 1),
 					this.serializer.toEntry(e));
 		});
 
@@ -129,13 +123,10 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES,
 					txn);
 
-			if (store.count(txn) == 0) {
-				this.key = 0;
-			}
-
+			long key = store.count(txn);
 			boolean modified = false;
 			for (T e : c) {
-				store.putRight(txn, LongBinding.longToEntry(this.key++),
+				store.putRight(txn, LongBinding.longToEntry(++key),
 						this.serializer.toEntry(e));
 				modified = true;
 			}
