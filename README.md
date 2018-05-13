@@ -1,4 +1,4 @@
-[![Build Status](https://api.travis-ci.org/ralscha/xodusqueue.png)](https://travis-ci.org/ralscha/xodusqueue)
+[![Build Status](https://api.travis-ci.org/ralscha/xodus-queue.png)](https://travis-ci.org/ralscha/xodus-queue)
 
 Persistent java.util.Queue implementation with Xodus
 
