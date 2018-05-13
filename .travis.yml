@@ -6,6 +6,9 @@ env:
   global:
   - SONATYPE_USERNAME=ralscha23
 
+before_install:
+  - chmod +x mvwn
+
 after_success:
 - python addsettings.py
 - mvn clean deploy -DskipTests=true --settings ~/.m2/mySettings.xml
