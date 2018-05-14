@@ -1,4 +1,22 @@
+/**
+ * Copyright 2018-2018 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *   http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package ch.rasc.xodusqueue;
+
+import java.math.BigDecimal;
+import java.math.BigInteger;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
@@ -255,6 +273,67 @@ class SerializerTest {
 			Assertions.assertEquals(new TestPojo(3, "three"), queue.remove());
 			Assertions.assertEquals(new TestPojo(4, "four"), queue.poll());
 			Assertions.assertEquals(new TestPojo(5, "five"), queue.poll());
+			Assertions.assertEquals(0L, queue.sizeLong());
+			Assertions.assertTrue(queue.isEmpty());
+		}
+	}
+
+	@Test
+	void testBigInteger() {
+		try (XodusQueue<BigInteger> queue = new XodusQueue<>("./test",
+				BigInteger.class)) {
+			Assertions.assertEquals(0L, queue.sizeLong());
+			queue.add(BigInteger.ZERO);
+			Assertions.assertEquals(1L, queue.sizeLong());
+
+			queue.add(BigInteger.ONE);
+			queue.add(new BigInteger("2"));
+			queue.add(new BigInteger("3"));
+			queue.offer(new BigInteger("4"));
+			queue.offer(new BigInteger("5"));
+
+			Assertions.assertEquals(6L, queue.sizeLong());
+			Assertions.assertEquals(BigInteger.ZERO, queue.element());
+			Assertions.assertEquals(BigInteger.ZERO, queue.peek());
+			Assertions.assertEquals(BigInteger.ZERO, queue.poll());
+			Assertions.assertEquals(BigInteger.ONE, queue.remove());
+			Assertions.assertEquals(new BigInteger("2"), queue.remove());
+			Assertions.assertEquals(new BigInteger("3"), queue.remove());
+			Assertions.assertEquals(new BigInteger("4"), queue.poll());
+			Assertions.assertEquals(new BigInteger("5"), queue.poll());
+			Assertions.assertEquals(0L, queue.sizeLong());
+			Assertions.assertTrue(queue.isEmpty());
+		}
+	}
+
+	@Test
+	void testBigDecimal() {
+		try (XodusQueue<BigDecimal> queue = new XodusQueue<>("./test",
+				BigDecimal.class)) {
+			Assertions.assertEquals(0L, queue.sizeLong());
+			queue.add(BigDecimal.ZERO);
+			Assertions.assertEquals(1L, queue.sizeLong());
+
+			queue.add(BigDecimal.ONE);
+			queue.add(new BigDecimal("2.1234567"));
+			queue.add(new BigDecimal("3.333333333333333333333"));
+			queue.offer(new BigDecimal("4.040404"));
+			queue.offer(new BigDecimal(
+					"555555555555555555.543210000000000000000000000000000000111"));
+
+			Assertions.assertEquals(6L, queue.sizeLong());
+			Assertions.assertEquals(BigDecimal.ZERO, queue.element());
+			Assertions.assertEquals(BigDecimal.ZERO, queue.peek());
+			Assertions.assertEquals(BigDecimal.ZERO, queue.poll());
+			Assertions.assertEquals(BigDecimal.ONE, queue.remove());
+			Assertions.assertEquals(new BigDecimal("2.1234567"), queue.remove());
+			Assertions.assertEquals(new BigDecimal("3.333333333333333333333"),
+					queue.remove());
+			Assertions.assertEquals(new BigDecimal("4.040404"), queue.poll());
+			Assertions.assertEquals(
+					new BigDecimal(
+							"555555555555555555.543210000000000000000000000000000000111"),
+					queue.poll());
 			Assertions.assertEquals(0L, queue.sizeLong());
 			Assertions.assertTrue(queue.isEmpty());
 		}
