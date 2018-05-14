@@ -21,6 +21,7 @@ import java.util.Arrays;
 
 import jetbrains.exodus.ArrayByteIterable;
 import jetbrains.exodus.ByteIterable;
+import jetbrains.exodus.ByteIterator;
 import jetbrains.exodus.CompoundByteIterable;
 import jetbrains.exodus.bindings.IntegerBinding;
 
@@ -28,8 +29,9 @@ public class BigDecimalXodusQueueSerializer implements XodusQueueSerializer<BigD
 
 	@Override
 	public BigDecimal fromEntry(ByteIterable value) {
-		int scale = IntegerBinding.compressedEntryToInt(value);
-		ArrayByteIterable unscaledValueByteArray = new ArrayByteIterable(value);
+		ByteIterator bi = value.iterator();
+		int scale = IntegerBinding.readCompressed(bi);
+		ArrayByteIterable unscaledValueByteArray = new ArrayByteIterable(bi);
 		BigInteger unscaledValue = new BigInteger(
 				Arrays.copyOf(unscaledValueByteArray.getBytesUnsafe(),
 						unscaledValueByteArray.getLength()));

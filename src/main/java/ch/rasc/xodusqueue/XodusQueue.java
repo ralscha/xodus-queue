@@ -15,11 +15,15 @@
  */
 package ch.rasc.xodusqueue;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.AbstractQueue;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Objects;
 
+import ch.rasc.xodusqueue.serializer.BigDecimalXodusQueueSerializer;
+import ch.rasc.xodusqueue.serializer.BigIntegerXodusQueueSerializer;
 import ch.rasc.xodusqueue.serializer.BooleanXodusQueueSerializer;
 import ch.rasc.xodusqueue.serializer.ByteXodusQueueSerializer;
 import ch.rasc.xodusqueue.serializer.DefaultXodusQueueSerializer;
@@ -77,6 +81,12 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 		}
 		else if (entryClass == Short.class) {
 			this.serializer = (XodusQueueSerializer<T>) new ShortXodusQueueSerializer();
+		}
+		else if (entryClass == BigInteger.class) {
+			this.serializer = (XodusQueueSerializer<T>) new BigIntegerXodusQueueSerializer();
+		}
+		else if (entryClass == BigDecimal.class) {
+			this.serializer = (XodusQueueSerializer<T>) new BigDecimalXodusQueueSerializer();
 		}
 		else {
 			this.serializer = new DefaultXodusQueueSerializer<>(entryClass);
