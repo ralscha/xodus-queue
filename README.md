@@ -43,11 +43,11 @@ try (XodusQueue<String> queue = new XodusQueue<>("./queue", String.class)) {
 ## Maven
 The library is hosted on the Central Maven Repository
 ```
-	<dependency>
-		<groupId>ch.rasc</groupId>
-		<artifactId>xodus-queue</artifactId>
-		<version>1.0.0</version>
-	</dependency>
+  <dependency>
+    <groupId>ch.rasc</groupId>
+    <artifactId>xodus-queue</artifactId>
+    <version>1.0.0</version>
+  </dependency>
 ```
 
 
