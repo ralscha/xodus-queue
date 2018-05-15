@@ -15,6 +15,40 @@
 
 	<inceptionYear>2018</inceptionYear>
 
+	<name>Xodus-Queue</name>
+	<url>https://github.com/ralscha/xodus-queue/</url>
+	<description>Persistent java.util.Queue implementation with Xodus</description>
+
+	<developers>
+		<developer>
+			<name>Ralph Schaer</name>
+			<email>ralphschaer@gmail.com</email>
+		</developer>
+	</developers>
+
+	<licenses>
+		<license>
+			<name>Apache 2</name>
+			<url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+
+	<issueManagement>
+		<system>GitHub</system>
+		<url>https://github.com/ralscha/xodus-queue/issues</url>
+	</issueManagement>
+
+	<scm>
+		<connection>scm:git:git@github.com:ralscha/xodus-queue.git</connection>
+		<developerConnection>scm:git:git@github.com:ralscha/xodus-queue.git</developerConnection>
+		<url>https://github.com/ralscha/xodus-queue.git</url>
+	</scm>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.jetbrains.xodus</groupId>
