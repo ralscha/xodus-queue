@@ -159,8 +159,26 @@ class XodusQueueTest {
 			Assertions.assertEquals(1, (int) queue.poll());
 			Assertions.assertEquals(2, (int) queue.poll());
 			Assertions.assertEquals(3, (int) queue.poll());
+
+			Assertions.assertTrue(queue.addAll(Arrays.asList(6, 7, 8)));
+			Assertions.assertEquals(5, queue.size());
+
 			Assertions.assertEquals(4, (int) queue.poll());
 			Assertions.assertEquals(5, (int) queue.poll());
+			Assertions.assertEquals(3, queue.size());
+
+			Assertions.assertEquals(6, (int) queue.poll());
+			Assertions.assertEquals(7, (int) queue.poll());
+			Assertions.assertEquals(8, (int) queue.poll());
+			Assertions.assertEquals(0, queue.size());
+
+			Assertions.assertTrue(queue.addAll(Arrays.asList(9, 10, 11)));
+			Assertions.assertEquals(3, queue.size());
+
+			Assertions.assertEquals(9, (int) queue.poll());
+			Assertions.assertEquals(10, (int) queue.poll());
+			Assertions.assertEquals(11, (int) queue.poll());
+			Assertions.assertEquals(0, queue.size());
 		}
 	}
 
@@ -172,6 +190,27 @@ class XodusQueueTest {
 			Assertions.assertTrue(queue.offer(3));
 			Assertions.assertEquals(3, queue.size());
 			Assertions.assertThrows(NullPointerException.class, () -> queue.offer(null));
+
+			Assertions.assertEquals(1, (int) queue.poll());
+			Assertions.assertTrue(queue.offer(4));
+
+			Assertions.assertEquals(2, (int) queue.poll());
+			Assertions.assertTrue(queue.offer(5));
+
+			Assertions.assertEquals(3, (int) queue.poll());
+			Assertions.assertTrue(queue.offer(6));
+
+			Assertions.assertEquals(4, (int) queue.poll());
+			Assertions.assertEquals(5, (int) queue.poll());
+			Assertions.assertEquals(6, (int) queue.poll());
+
+			Assertions.assertEquals(0, queue.size());
+			Assertions.assertTrue(queue.offer(7));
+			Assertions.assertEquals(7, (int) queue.poll());
+
+			Assertions.assertEquals(0, queue.size());
+			Assertions.assertTrue(queue.offer(8));
+			Assertions.assertEquals(8, (int) queue.poll());
 		}
 	}
 

@@ -21,6 +21,7 @@ import java.util.AbstractQueue;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicLong;
 
 import ch.rasc.xodusqueue.serializer.BigDecimalXodusQueueSerializer;
 import ch.rasc.xodusqueue.serializer.BigIntegerXodusQueueSerializer;
@@ -53,6 +54,8 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 	private final Environment env;
 
 	private final XodusQueueSerializer<T> serializer;
+
+	private final AtomicLong key = new AtomicLong(0L);
 
 	@SuppressWarnings("unchecked")
 	public XodusQueue(final String databaseDir, final Class<T> entryClass) {
@@ -114,7 +117,11 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES,
 					txn);
 
-			store.putRight(txn, LongBinding.longToEntry(store.count(txn) + 1),
+			if (store.count(txn) == 0L) {
+				this.key.set(0L);
+			}
+
+			store.putRight(txn, LongBinding.longToEntry(this.key.incrementAndGet()),
 					this.serializer.toEntry(e));
 		});
 
@@ -133,10 +140,13 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES,
 					txn);
 
-			long key = store.count(txn);
+			if (store.count(txn) == 0L) {
+				this.key.set(0L);
+			}
+
 			boolean modified = false;
 			for (T e : c) {
-				store.putRight(txn, LongBinding.longToEntry(++key),
+				store.putRight(txn, LongBinding.longToEntry(this.key.incrementAndGet()),
 						this.serializer.toEntry(e));
 				modified = true;
 			}
@@ -373,6 +383,37 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 		this.env.executeInExclusiveTransaction(txn -> {
 			this.env.truncateStore(STORE_NAME, txn);
 		});
+	}
+
+	protected int drainTo(Collection<? super T> c, int maxElements) {
+		Objects.requireNonNull(c);
+
+		if (c == this) {
+			throw new IllegalArgumentException();
+		}
+
+		if (maxElements <= 0) {
+			return 0;
+		}
+
+		return this.env.computeInExclusiveTransaction(txn -> {
+			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES,
+					txn, false);
+			if (store != null) {
+				int currentCounter = 0;
+				try (Cursor cursor = store.openCursor(txn)) {
+					while (cursor.getNext() && currentCounter < maxElements) {
+						T e = this.serializer.fromEntry(cursor.getValue());
+						c.add(e);
+						cursor.deleteCurrent();
+						currentCounter++;
+					}
+				}
+				return currentCounter;
+			}
+			return 0;
+		});
+
 	}
 
 }
