@@ -53,7 +53,7 @@ The library is hosted on the Central Maven Repository
 
 ## Changelog
 
-### 1.0.0 - May ??, 2018
+### 1.0.0 - May 15, 2018
   * Initial release
 
 
