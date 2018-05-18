@@ -37,6 +37,26 @@ class XodusQueueTest {
 	}
 
 	@Test
+	void testShutdown() {
+		try (XodusQueue<String> queue = new XodusQueue<>("./test", String.class)) {
+			queue.add("one");
+			queue.add("two");
+			queue.add("three");
+			Assertions.assertEquals(3, queue.size());
+		}
+
+		try (XodusQueue<String> queue = new XodusQueue<>("./test", String.class)) {
+			queue.add("four");
+			Assertions.assertEquals(4, queue.size());
+		}
+
+		try (XodusQueue<String> queue = new XodusQueue<>("./test", String.class)) {
+			Assertions.assertEquals("one", queue.remove());
+			Assertions.assertEquals(3, queue.size());
+		}
+	}
+
+	@Test
 	void testSize() {
 		try (XodusQueue<String> queue = new XodusQueue<>("./test", String.class)) {
 			Assertions.assertEquals(0, queue.size());

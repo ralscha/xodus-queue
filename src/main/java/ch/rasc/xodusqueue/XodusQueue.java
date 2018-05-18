@@ -94,12 +94,16 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 		else {
 			this.serializer = new DefaultXodusQueueSerializer<>(entryClass);
 		}
+
+		this.key.set(this.sizeLong());
 	}
 
 	public XodusQueue(final String databaseDir,
 			final XodusQueueSerializer<T> serializer) {
 		this.env = Environments.newInstance(databaseDir);
 		this.serializer = serializer;
+
+		this.key.set(this.sizeLong());
 	}
 
 	public XodusQueue(final LogConfig logConfig,
@@ -107,6 +111,8 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 			final XodusQueueSerializer<T> serializer) {
 		this.env = Environments.newInstance(logConfig, environmentConfig);
 		this.serializer = serializer;
+
+		this.key.set(this.sizeLong());
 	}
 
 	@Override

@@ -40,6 +40,29 @@ class XodusBlockingQueueCapacityTest {
 	}
 
 	@Test
+	void testShutdown() {
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest",
+				String.class, 4)) {
+			queue.add("one");
+			queue.add("two");
+			queue.add("three");
+			Assertions.assertEquals(3, queue.size());
+		}
+
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest",
+				String.class, 4)) {
+			queue.add("four");
+			Assertions.assertEquals(4, queue.size());
+		}
+
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest",
+				String.class, 4)) {
+			Assertions.assertEquals("one", queue.remove());
+			Assertions.assertEquals(3, queue.size());
+		}
+	}
+
+	@Test
 	void testClear() {
 		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest",
 				String.class, 3)) {

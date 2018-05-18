@@ -39,6 +39,29 @@ class XodusBlockingQueueTest {
 	}
 
 	@Test
+	void testShutdown() {
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest",
+				String.class, Long.MAX_VALUE)) {
+			queue.add("one");
+			queue.add("two");
+			queue.add("three");
+			Assertions.assertEquals(3, queue.size());
+		}
+
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest",
+				String.class, Long.MAX_VALUE)) {
+			queue.add("four");
+			Assertions.assertEquals(4, queue.size());
+		}
+
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest",
+				String.class, Long.MAX_VALUE)) {
+			Assertions.assertEquals("one", queue.remove());
+			Assertions.assertEquals(3, queue.size());
+		}
+	}
+
+	@Test
 	void testOfferTake() {
 		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest",
 				String.class, Long.MAX_VALUE)) {
