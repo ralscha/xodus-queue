@@ -43,11 +43,11 @@ The blocking queue supports a capacity limit. The following example limits the n
 `put` blocks the current thread when the queue is full and `take` blocks when the queue is empty.
 ```
 try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blocking_queue", String.class, 3)) {
-			queue.put("one");
-			queue.put("two");
+  queue.put("one");
+  queue.put("two");
 			
-      String head = queue.take(); // "one"
-		}
+  String head = queue.take(); // "one"
+}
 ```
 
 
@@ -65,7 +65,7 @@ The library is hosted on the Central Maven Repository
 ## Changelog
 
 ### 1.0.1 - May 19, 2018
-  * Fix key handling in XodusQueue
+  * Fix key management in XodusQueue
   * Add `java.util.concurrent.BlockingQueue` implementation: XodusBlockingQueue
 
 
