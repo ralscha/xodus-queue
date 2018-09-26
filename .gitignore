@@ -1,7 +1,7 @@
 target/
 .settings/
-.project/
-.classpath/
+.project
+.classpath
 pom.xml.tag
 pom.xml.releaseBackup
 pom.xml.versionsBackup
@@ -13,5 +13,3 @@ buildNumber.properties
 
 # Avoid ignoring Maven wrapper jar file (.jar files are usually ignored)
 !/.mvn/wrapper/maven-wrapper.jar
-/.classpath
-/.project
