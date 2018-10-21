@@ -163,18 +163,11 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 
 	@Override
 	public T poll() {
-		return pollInternal(true);
+		return this.env.computeInExclusiveTransaction(pollComputable(true));
 	}
 
 	@Override
 	public T peek() {
-		return pollInternal(false);
-	}
-
-	private T pollInternal(final boolean remove) {
-		if (remove) {
-			return this.env.computeInExclusiveTransaction(pollComputable(true));
-		}
 		return this.env.computeInReadonlyTransaction(pollComputable(false));
 	}
 
