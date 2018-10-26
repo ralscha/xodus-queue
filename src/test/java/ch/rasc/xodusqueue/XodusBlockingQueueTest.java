@@ -254,4 +254,39 @@ class XodusBlockingQueueTest {
 		}
 	}
 
+	@Test
+	public void testMultipleThreads() throws Throwable {
+
+		int threadCount = 1_000;
+		CountDownLatch startLatch = new CountDownLatch(threadCount);
+		CountDownLatch latch = new CountDownLatch(threadCount);
+
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest",
+				String.class, Long.MAX_VALUE)) {
+			for (int i = 0; i < threadCount; i++) {
+				new Thread(Integer.toString(i)) {
+					@Override
+					public void run() {
+						try {
+							startLatch.countDown();
+							startLatch.await();
+							for (int j = 0; j < 10; j++) {
+								queue.put(getName());
+								TimeUnit.MILLISECONDS.sleep((long) (Math.random() * 300));
+							}
+							latch.countDown();
+						}
+						catch (Throwable e) {
+							e.printStackTrace();
+						}
+					}
+				}.start();
+			}
+
+			latch.await(5, TimeUnit.SECONDS);
+			assert queue.size() == 10 * threadCount;
+		}
+
+	}
+
 }
