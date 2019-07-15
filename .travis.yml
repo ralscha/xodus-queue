@@ -1,8 +1,7 @@
 sudo: false
 language: java
-dist: trusty
 jdk:
-- oraclejdk8
+- openjdk8
 env:
   global:
   - SONATYPE_USERNAME=ralscha23
