@@ -1,4 +1,4 @@
-[![Build Status](https://api.travis-ci.org/ralscha/xodus-queue.png)](https://travis-ci.org/ralscha/xodus-queue)
+![Test Status](https://github.com/ralscha/xodus-queue/workflows/test/badge.svg)
 
 This project provides a persistent `java.util.Queue` and `java.util.concurrent.BlockingQueue` implementation. It is using [Xodus](https://github.com/JetBrains/xodus) as the underlying storage engine. 
 For persisting POJOs it relies on [Kryo](https://github.com/EsotericSoftware/kryo).
