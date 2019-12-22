@@ -1,22 +1,20 @@
 ![Test Status](https://github.com/ralscha/xodus-queue/workflows/test/badge.svg)
 
 This project provides a persistent `java.util.Queue` and `java.util.concurrent.BlockingQueue` implementation. It is using [Xodus](https://github.com/JetBrains/xodus) as the underlying storage engine. 
-For persisting POJOs it relies on [Kryo](https://github.com/EsotericSoftware/kryo).
+For persisting POJOs, it relies on [Kryo](https://github.com/EsotericSoftware/kryo).
 
-This is not a high performance queue and it only works within a single JVM. The main motivation was to write a queue that survives a server restart and does 
-not introduce a lot of external dependencies to my projects. Because I often use [Xodus](https://github.com/JetBrains/xodus) already in my projects, this library
-only adds [Kryo](https://github.com/EsotericSoftware/kryo) as additional dependency. 
+xodus-queue is not a high-performance queue, and it only works within a single JVM. The primary motivation was to write a queue that survives a server restart and does not introduce a lot of external dependencies to my projects. Because I often use [Xodus](https://github.com/JetBrains/xodus) already in my projects, this library
+only adds [Kryo](https://github.com/EsotericSoftware/kryo) as an additional dependency. 
 
-Any contributions are welcome, if something is missing or could be implemented better, submit a pull request or an issue.
+Any contributions are welcome if something is missing or could be implemented better, submit a pull request, or create an issue.
 
 
 ## Usage
 
 Create an instance of `XodusQueue` or `XodusBlockingQueue` and specify the database directory and the class of the entries you want to put into the queue. 
-These can be either built in Java types like String, Integer, Long or a more complex POJO. 
+These can be either built-in Java types like String, Integer, Long, or a more complex POJO. 
 
-You should open the queue in an automatic resource management block, because the underlying Xodus database should be closed 
-when you no longer need the queue. 
+It is recommended to open the queue in an automatic resource management block because the underlying Xodus database should be closed when you no longer access the queue. 
  
 ```
 try (XodusQueue<String> queue = new XodusQueue<>("./test", String.class)) {
@@ -28,7 +26,7 @@ After the instantiation, you can call any of the methods from the `java.util.Que
 See the JavaDoc ([Queue](https://docs.oracle.com/javase/10/docs/api/java/util/Queue.html), [BlockingQueue](https://docs.oracle.com/javase/10/docs/api/java/util/concurrent/BlockingQueue.html)) for a list of all available methods.
 
 Currently [`iterator()`](https://docs.oracle.com/javase/10/docs/api/java/util/Collection.html#iterator()) is not implemented.
-The underlying storage engine requires that read and write operations have to run inside transactions and I don't know how
+The underlying storage engine requires that read and write operations have to run inside transactions, and I don't know how
 to implement that in an iterator. 
 
 ```
@@ -45,7 +43,7 @@ The blocking queue supports a capacity limit. The following example limits the n
 try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blocking_queue", String.class, 3)) {
   queue.put("one");
   queue.put("two");
-			
+
   String head = queue.take(); // "one"
 }
 ```
