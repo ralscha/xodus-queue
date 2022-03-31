@@ -1,5 +1,5 @@
 /**
- * Copyright 2018-2018 the original author or authors.
+ * Copyright 2018-2022 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,25 +18,27 @@ package ch.rasc.xodusqueue.serializer;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
-import com.esotericsoftware.kryo.pool.KryoFactory;
-import com.esotericsoftware.kryo.pool.KryoPool;
+import com.esotericsoftware.kryo.util.Pool;
 
 import jetbrains.exodus.ArrayByteIterable;
 import jetbrains.exodus.ByteIterable;
 
 public class DefaultXodusQueueSerializer<T> implements XodusQueueSerializer<T> {
 
-	private final KryoPool kryoPool;
+	private final Pool<Kryo> kryoPool;
 
 	final Class<T> entryClass;
 
 	public DefaultXodusQueueSerializer(final Class<T> entryClass) {
-		KryoFactory factory = () -> {
-			Kryo kryo = new Kryo();
-			kryo.register(entryClass);
-			return kryo;
+		this.kryoPool = new Pool<>(true, false, 8) {
+			@Override
+			protected Kryo create() {
+				Kryo kryo = new Kryo();
+				kryo.register(entryClass);
+				return kryo;
+			}
 		};
-		this.kryoPool = new KryoPool.Builder(factory).build();
+
 		this.entryClass = entryClass;
 	}
 
@@ -44,19 +46,25 @@ public class DefaultXodusQueueSerializer<T> implements XodusQueueSerializer<T> {
 	public T fromEntry(ByteIterable value) {
 		ArrayByteIterable abi = new ArrayByteIterable(value);
 		try (Input input = new Input(abi.getBytesUnsafe(), 0, abi.getLength())) {
-			return this.kryoPool.run(kryo -> kryo.readObject(input, this.entryClass));
+			Kryo kryo = this.kryoPool.obtain();
+			try {
+				return kryo.readObject(input, this.entryClass);
+			}
+			finally {
+				this.kryoPool.free(kryo);
+			}
 		}
 	}
 
 	@Override
 	public ByteIterable toEntry(T element) {
-		Kryo kryo = this.kryoPool.borrow();
+		Kryo kryo = this.kryoPool.obtain();
 		try (Output output = new Output(64, -1)) {
 			kryo.writeObject(output, element);
 			return new ArrayByteIterable(output.toBytes());
 		}
 		finally {
-			this.kryoPool.release(kryo);
+			this.kryoPool.free(kryo);
 		}
 	}
 
