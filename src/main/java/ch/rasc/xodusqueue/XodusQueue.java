@@ -18,8 +18,10 @@ package ch.rasc.xodusqueue;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.AbstractQueue;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -95,24 +97,41 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 			this.serializer = new DefaultXodusQueueSerializer<>(entryClass);
 		}
 
-		this.key.set(this.sizeLong());
+		this.key.set(this.lastKey());
 	}
 
-	public XodusQueue(final String databaseDir,
-			final XodusQueueSerializer<T> serializer) {
+	public XodusQueue(final String databaseDir, final XodusQueueSerializer<T> serializer) {
 		this.env = Environments.newInstance(databaseDir);
 		this.serializer = serializer;
 
-		this.key.set(this.sizeLong());
+		this.key.set(this.lastKey());
 	}
 
-	public XodusQueue(final LogConfig logConfig,
-			final EnvironmentConfig environmentConfig,
+	public XodusQueue(final LogConfig logConfig, final EnvironmentConfig environmentConfig,
 			final XodusQueueSerializer<T> serializer) {
 		this.env = Environments.newInstance(logConfig, environmentConfig);
 		this.serializer = serializer;
 
-		this.key.set(this.sizeLong());
+		this.key.set(this.lastKey());
+	}
+
+	/**
+	 * Returns the last key stored in the queue store or 0 if the store is empty.
+	 */
+	private long lastKey() {
+		return this.env.computeInReadonlyTransaction(txn -> {
+			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES, txn, false);
+			if (store == null) {
+				return 0L;
+			}
+
+			try (Cursor cursor = store.openCursor(txn)) {
+				if (cursor.getLast()) {
+					return LongBinding.entryToLong(cursor.getKey());
+				}
+			}
+			return 0L;
+		});
 	}
 
 	@Override
@@ -120,15 +139,17 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 		Objects.requireNonNull(e);
 
 		this.env.executeInExclusiveTransaction(txn -> {
-			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES,
-					txn);
+			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES, txn);
 
-			if (store.count(txn) == 0L) {
-				this.key.set(0L);
+			long nextKey = 1L;
+			try (Cursor cursor = store.openCursor(txn)) {
+				if (cursor.getLast()) {
+					nextKey = LongBinding.entryToLong(cursor.getKey()) + 1L;
+				}
 			}
 
-			store.putRight(txn, LongBinding.longToEntry(this.key.incrementAndGet()),
-					this.serializer.toEntry(e));
+			store.putRight(txn, LongBinding.longToEntry(nextKey), this.serializer.toEntry(e));
+			this.key.set(nextKey);
 		});
 
 		return true;
@@ -143,18 +164,26 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 		}
 
 		return this.env.computeInExclusiveTransaction(txn -> {
-			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES,
-					txn);
-
-			if (store.count(txn) == 0L) {
-				this.key.set(0L);
-			}
+			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES, txn);
 
 			boolean modified = false;
+			long last = 0L;
+			// determine starting key by reading last key in store
+			try (Cursor cursor = store.openCursor(txn)) {
+				if (cursor.getLast()) {
+					last = LongBinding.entryToLong(cursor.getKey());
+				}
+			}
+
 			for (T e : c) {
-				store.putRight(txn, LongBinding.longToEntry(this.key.incrementAndGet()),
-						this.serializer.toEntry(e));
+				Objects.requireNonNull(e);
+				last++;
+				store.putRight(txn, LongBinding.longToEntry(last), this.serializer.toEntry(e));
 				modified = true;
+			}
+
+			if (modified) {
+				this.key.set(last);
 			}
 
 			return modified;
@@ -173,8 +202,7 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 
 	private TransactionalComputable<T> pollComputable(final boolean remove) {
 		return txn -> {
-			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES,
-					txn, false);
+			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES, txn, false);
 			if (store != null) {
 				try (Cursor cursor = store.openCursor(txn)) {
 					if (cursor.getNext()) {
@@ -198,8 +226,7 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 
 	public long sizeLong() {
 		return this.env.computeInReadonlyTransaction(txn -> {
-			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES,
-					txn, false);
+			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES, txn, false);
 			if (store != null) {
 				return store.count(txn);
 			}
@@ -222,8 +249,7 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 	@Override
 	public boolean contains(Object o) {
 		return this.env.computeInReadonlyTransaction(txn -> {
-			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES,
-					txn, false);
+			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES, txn, false);
 			if (store != null) {
 				return containsInternal(o, txn, store);
 			}
@@ -245,14 +271,27 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 
 	@Override
 	public Iterator<T> iterator() {
-		throw new UnsupportedOperationException();
+		// Create a snapshot of current elements to provide a fail-safe iterator
+		List<T> snapshot = new ArrayList<>();
+		this.env.executeInReadonlyTransaction(txn -> {
+			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES, txn, false);
+			if (store != null) {
+				try (Cursor cursor = store.openCursor(txn)) {
+					while (cursor.getNext()) {
+						ByteIterable value = cursor.getValue();
+						T e = this.serializer.fromEntry(value);
+						snapshot.add(e);
+					}
+				}
+			}
+		});
+		return snapshot.iterator();
 	}
 
 	@Override
 	public Object[] toArray() {
 		return this.env.computeInReadonlyTransaction(txn -> {
-			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES,
-					txn, false);
+			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES, txn, false);
 			if (store != null) {
 				Object[] r = new Object[(int) store.count(txn)];
 				int ix = 0;
@@ -273,13 +312,11 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 	@Override
 	public <T> T[] toArray(T[] a) {
 		return this.env.computeInReadonlyTransaction(txn -> {
-			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES,
-					txn, false);
+			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES, txn, false);
 			if (store != null) {
 				int size = (int) store.count(txn);
 				T[] r = a.length >= size ? a
-						: (T[]) java.lang.reflect.Array
-								.newInstance(a.getClass().getComponentType(), size);
+						: (T[]) java.lang.reflect.Array.newInstance(a.getClass().getComponentType(), size);
 				int ix = 0;
 				try (Cursor cursor = store.openCursor(txn)) {
 					while (cursor.getNext()) {
@@ -296,8 +333,7 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 	@Override
 	public boolean remove(Object o) {
 		return this.env.computeInExclusiveTransaction(txn -> {
-			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES,
-					txn, false);
+			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES, txn, false);
 
 			if (store != null) {
 				try (Cursor cursor = store.openCursor(txn)) {
@@ -317,8 +353,7 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 	@Override
 	public boolean containsAll(Collection<?> c) {
 		return this.env.computeInReadonlyTransaction(txn -> {
-			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES,
-					txn, false);
+			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES, txn, false);
 			if (store != null) {
 				for (Object e : c) {
 					if (!containsInternal(e, txn, store)) {
@@ -335,9 +370,13 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 	public boolean removeAll(Collection<?> c) {
 		Objects.requireNonNull(c);
 
+		// Optimize for empty collection - no need to iterate
+		if (c.isEmpty()) {
+			return false;
+		}
+
 		return this.env.computeInExclusiveTransaction(txn -> {
-			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES,
-					txn, false);
+			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES, txn, false);
 			boolean modified = false;
 			if (store != null) {
 				try (Cursor cursor = store.openCursor(txn)) {
@@ -358,9 +397,17 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 	public boolean retainAll(Collection<?> c) {
 		Objects.requireNonNull(c);
 
+		// Optimize for empty collection - clear everything
+		if (c.isEmpty()) {
+			if (!isEmpty()) {
+				clear();
+				return true;
+			}
+			return false;
+		}
+
 		return this.env.computeInExclusiveTransaction(txn -> {
-			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES,
-					txn, false);
+			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES, txn, false);
 			boolean modified = false;
 			if (store != null) {
 				try (Cursor cursor = store.openCursor(txn)) {
@@ -381,6 +428,7 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 	public void clear() {
 		this.env.executeInExclusiveTransaction(txn -> {
 			this.env.truncateStore(STORE_NAME, txn);
+			this.key.set(0L);
 		});
 	}
 
@@ -396,8 +444,7 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 		}
 
 		return this.env.computeInExclusiveTransaction(txn -> {
-			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES,
-					txn, false);
+			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES, txn, false);
 			if (store != null) {
 				int currentCounter = 0;
 				try (Cursor cursor = store.openCursor(txn)) {

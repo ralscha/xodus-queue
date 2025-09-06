@@ -280,8 +280,7 @@ class SerializerTest {
 
 	@Test
 	void testBigInteger() {
-		try (XodusQueue<BigInteger> queue = new XodusQueue<>("./test",
-				BigInteger.class)) {
+		try (XodusQueue<BigInteger> queue = new XodusQueue<>("./test", BigInteger.class)) {
 			Assertions.assertEquals(0L, queue.sizeLong());
 			queue.add(BigInteger.ZERO);
 			Assertions.assertEquals(1L, queue.sizeLong());
@@ -308,8 +307,7 @@ class SerializerTest {
 
 	@Test
 	void testBigDecimal() {
-		try (XodusQueue<BigDecimal> queue = new XodusQueue<>("./test",
-				BigDecimal.class)) {
+		try (XodusQueue<BigDecimal> queue = new XodusQueue<>("./test", BigDecimal.class)) {
 			Assertions.assertEquals(0L, queue.sizeLong());
 			queue.add(BigDecimal.ZERO);
 			Assertions.assertEquals(1L, queue.sizeLong());
@@ -318,8 +316,7 @@ class SerializerTest {
 			queue.add(new BigDecimal("2.1234567"));
 			queue.add(new BigDecimal("3.333333333333333333333"));
 			queue.offer(new BigDecimal("4.040404"));
-			queue.offer(new BigDecimal(
-					"555555555555555555.543210000000000000000000000000000000111"));
+			queue.offer(new BigDecimal("555555555555555555.543210000000000000000000000000000000111"));
 
 			Assertions.assertEquals(6L, queue.sizeLong());
 			Assertions.assertEquals(BigDecimal.ZERO, queue.element());
@@ -327,15 +324,13 @@ class SerializerTest {
 			Assertions.assertEquals(BigDecimal.ZERO, queue.poll());
 			Assertions.assertEquals(BigDecimal.ONE, queue.remove());
 			Assertions.assertEquals(new BigDecimal("2.1234567"), queue.remove());
-			Assertions.assertEquals(new BigDecimal("3.333333333333333333333"),
-					queue.remove());
+			Assertions.assertEquals(new BigDecimal("3.333333333333333333333"), queue.remove());
 			Assertions.assertEquals(new BigDecimal("4.040404"), queue.poll());
-			Assertions.assertEquals(
-					new BigDecimal(
-							"555555555555555555.543210000000000000000000000000000000111"),
+			Assertions.assertEquals(new BigDecimal("555555555555555555.543210000000000000000000000000000000111"),
 					queue.poll());
 			Assertions.assertEquals(0L, queue.sizeLong());
 			Assertions.assertTrue(queue.isEmpty());
 		}
 	}
+
 }

@@ -52,13 +52,11 @@ public class XodusQueue2Test {
 
 	@Test
 	public void testQueueSurviveReopen() throws Throwable {
-		try (XodusQueue<String> queue = new XodusQueue<>("./queue",
-				new StringXodusQueueSerializer())) {
+		try (XodusQueue<String> queue = new XodusQueue<>("./queue", new StringXodusQueueSerializer())) {
 			queue.add("5");
 		}
 
-		try (XodusQueue<String> queue = new XodusQueue<>("./queue",
-				new StringXodusQueueSerializer())) {
+		try (XodusQueue<String> queue = new XodusQueue<>("./queue", new StringXodusQueueSerializer())) {
 			String head = queue.poll();
 			Assertions.assertEquals("5", head);
 		}
@@ -66,8 +64,7 @@ public class XodusQueue2Test {
 
 	@Test
 	public void testQueuePushOrder() throws Throwable {
-		try (XodusQueue<Integer> queue = new XodusQueue<>("./queue",
-				new IntegerXodusQueueSerializer())) {
+		try (XodusQueue<Integer> queue = new XodusQueue<>("./queue", new IntegerXodusQueueSerializer())) {
 			for (int i = 0; i < 300; i++) {
 				queue.add(i);
 			}
@@ -86,8 +83,7 @@ public class XodusQueue2Test {
 		final CountDownLatch startLatch = new CountDownLatch(threadCount);
 		final CountDownLatch latch = new CountDownLatch(threadCount);
 
-		try (XodusQueue<String> queue = new XodusQueue<>("./queue",
-				new StringXodusQueueSerializer())) {
+		try (XodusQueue<String> queue = new XodusQueue<>("./queue", new StringXodusQueueSerializer())) {
 			for (int i = 0; i < threadCount; i++) {
 				queue.add(Integer.toString(i));
 			}
@@ -126,8 +122,7 @@ public class XodusQueue2Test {
 		CountDownLatch startLatch = new CountDownLatch(threadCount);
 		CountDownLatch latch = new CountDownLatch(threadCount);
 
-		try (XodusQueue<String> queue = new XodusQueue<>("./queue",
-				new StringXodusQueueSerializer())) {
+		try (XodusQueue<String> queue = new XodusQueue<>("./queue", new StringXodusQueueSerializer())) {
 			for (int i = 0; i < threadCount; i++) {
 				new Thread(Integer.toString(i)) {
 					@Override

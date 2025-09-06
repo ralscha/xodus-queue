@@ -62,15 +62,21 @@
 		<!-- TEST dependencies -->
 		<dependency>
 			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-api</artifactId>
+			<version>6.0.0-RC2</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
 			<artifactId>junit-jupiter-engine</artifactId>
-			<version>5.13.1</version>
+			<version>6.0.0-RC2</version>
 			<scope>test</scope>
 		</dependency>
 
 		<dependency>
 			<groupId>org.junit.platform</groupId>
 			<artifactId>junit-platform-launcher</artifactId>
-			<version>1.11.4</version>
+			<version>6.0.0-RC2</version>
 			<scope>test</scope>
 		</dependency>
 
@@ -78,6 +84,42 @@
 
 	<build>
 		<plugins>
+			<plugin>
+				<groupId>org.jacoco</groupId>
+				<artifactId>jacoco-maven-plugin</artifactId>
+				<version>0.8.13</version>
+				<executions>
+					<execution>
+						<id>prepare-agent</id>
+						<goals>
+							<goal>prepare-agent</goal>
+						</goals>
+						<phase>initialize</phase>
+					</execution>
+					<execution>
+						<id>report</id>
+						<goals>
+							<goal>report</goal>
+						</goals>
+						<phase>verify</phase>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<groupId>io.spring.javaformat</groupId>
+				<artifactId>spring-javaformat-maven-plugin</artifactId>
+				<version>0.0.47</version>
+				<executions>
+					<execution>
+						<goals>
+									<goal>validate</goal>
+								</goals>
+						<phase>validate</phase>
+					</execution>
+				</executions>
+			</plugin>
+
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -107,7 +149,16 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-surefire-plugin</artifactId>
-				<version>3.5.2</version>				
+				<version>3.2.5</version>
+				<configuration>
+					<includes>
+						<include>**/*Test.java</include>
+						<include>**/*Tests.java</include>
+					</includes>
+					<excludes>
+						<exclude>**/*StressTest.java</exclude>
+					</excludes>
+				</configuration>
 			</plugin>
 
 			<plugin>
@@ -137,28 +188,32 @@
 				<artifactId>license-maven-plugin</artifactId>
 				<version>4.6</version>
 				<configuration>
-					<header>${basedir}/src/main/config/header.txt</header>
+					<licenseSets>
+						<licenseSet>
+							<header>${basedir}/src/main/config/header.txt</header>
+							<excludes>
+								<exclude>**/*.xml</exclude>
+								<exclude>**/*.md</exclude>
+								<exclude>**/*.py</exclude>
+								<exclude>LICENSE</exclude>
+								<exclude>.travis.yml</exclude>
+								<exclude>**/.gitignore</exclude>
+								<exclude>.factorypath</exclude>
+								<exclude>.mvn/**/*</exclude>
+								<exclude>mvnw.cmd</exclude>
+								<exclude>mvnw</exclude>
+								<exclude>.apt_generated/**</exclude>
+								<exclude>.editorconfig</exclude>
+								<exclude>.github/**</exclude>
+							</excludes>
+						</licenseSet>
+					</licenseSets>
 					<properties>
 
 						<year>${project.inceptionYear}</year>
 						<currentYear>2022</currentYear>
 
 					</properties>
-					<excludes>
-						<exclude>**/*.xml</exclude>
-						<exclude>**/*.md</exclude>
-						<exclude>**/*.py</exclude>
-						<exclude>LICENSE</exclude>
-						<exclude>.travis.yml</exclude>
-						<exclude>**/.gitignore</exclude>
-						<exclude>.factorypath</exclude>
-						<exclude>.mvn/**/*</exclude>
-						<exclude>mvnw.cmd</exclude>
-						<exclude>mvnw</exclude>
-						<exclude>.apt_generated/**</exclude>
-						<exclude>.editorconfig</exclude>
-						<exclude>.github/**</exclude>
-					</excludes>
 					<strictCheck>true</strictCheck>
 				</configuration>
 				<executions>
@@ -173,4 +228,22 @@
 			</plugin>
 		</plugins>
 	</build>
+
+	<profiles>
+		<profile>
+			<id>stress</id>
+			<build>
+				<plugins>
+					<plugin>
+						<groupId>org.apache.maven.plugins</groupId>
+						<artifactId>maven-surefire-plugin</artifactId>
+						<configuration>
+							<!-- Do not exclude stress tests when profile 'stress' is active -->
+							<excludes/>
+						</configuration>
+					</plugin>
+				</plugins>
+			</build>
+		</profile>
+	</profiles>
 </project>

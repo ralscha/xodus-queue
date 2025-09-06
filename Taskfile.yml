@@ -1,0 +1,89 @@
+#
+# Copyright the original author or authors.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#   http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+version: '3'
+
+tasks:
+  default:
+    cmds:
+      - task --list-all
+
+  format:
+    desc: "Format source using Spring Java Format"
+    cmds:
+      - cmd: cmd /c "mvnw.cmd spring-javaformat:apply"
+        platforms: [windows]
+      - cmd: ./mvnw spring-javaformat:apply
+        platforms: [linux, darwin]
+
+  test:
+    desc: "Run unit tests"
+    cmds:
+      - cmd: cmd /c "mvnw.cmd test"
+        platforms: [windows]
+      - cmd: ./mvnw test
+        platforms: [linux, darwin]
+
+  stress:
+    desc: "Run stress tests via Maven profile 'stress'"
+    cmds:
+      - cmd: cmd /c "mvnw.cmd -Pstress test"
+        platforms: [windows]
+      - cmd: ./mvnw -Pstress test
+        platforms: [linux, darwin]
+
+  verify:
+    desc: "Run full verification including JaCoCo report"
+    cmds:
+      - cmd: cmd /c "mvnw.cmd verify"
+        platforms: [windows]
+      - cmd: ./mvnw verify
+        platforms: [linux, darwin]
+
+  jacoco-report:
+    desc: "Generate JaCoCo HTML report without running tests"
+    cmds:
+      - cmd: cmd /c "mvnw.cmd org.jacoco:jacoco-maven-plugin:0.8.13:report"
+        platforms: [windows]
+      - cmd: ./mvnw org.jacoco:jacoco-maven-plugin:0.8.13:report
+        platforms: [linux, darwin]
+
+  show-coverage:
+    desc: "Generate JaCoCo report (verify) and open the HTML report if possible"
+    cmds:
+      - cmd: cmd /c "mvnw.cmd verify"
+        platforms: [windows]
+      - cmd: ./mvnw verify
+        platforms: [linux, darwin]
+      - cmd: cmd /c "start target/site/jacoco/index.html"
+        platforms: [windows]
+      - cmd: xdg-open target/site/jacoco/index.html
+        platforms: [linux]
+      - cmd: open target/site/jacoco/index.html
+        platforms: [darwin]
+      - cmd: echo "Open the coverage report at target/site/jacoco/index.html"
+
+  all:
+    desc: "Format, run license format, run verify, and open coverage report"
+    deps: [format, license-format, verify, show-coverage]
+
+  license-format:
+    desc: "Apply license headers to files"
+    cmds:
+      - cmd: cmd /c "mvnw.cmd com.mycila:license-maven-plugin:4.6:format"
+        platforms: [windows]
+      - cmd: ./mvnw com.mycila:license-maven-plugin:4.6:format
+        platforms: [linux, darwin]

@@ -16,7 +16,9 @@
 package ch.rasc.xodusqueue;
 
 public class TestPojo {
+
 	private long id;
+
 	private String name;
 
 	public TestPojo() {

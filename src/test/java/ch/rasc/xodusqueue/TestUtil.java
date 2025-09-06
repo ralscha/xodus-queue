@@ -24,6 +24,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.attribute.BasicFileAttributes;
 
 public class TestUtil {
+
 	public static void deleteDirectory(String directoryName) {
 		Path directory = Paths.get(directoryName);
 		if (!Files.exists(directory)) {
@@ -32,15 +33,13 @@ public class TestUtil {
 		try {
 			Files.walkFileTree(directory, new SimpleFileVisitor<Path>() {
 				@Override
-				public FileVisitResult visitFile(Path file, BasicFileAttributes attrs)
-						throws IOException {
+				public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
 					Files.delete(file);
 					return FileVisitResult.CONTINUE;
 				}
 
 				@Override
-				public FileVisitResult postVisitDirectory(Path dir, IOException exc)
-						throws IOException {
+				public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
 					Files.delete(dir);
 					return FileVisitResult.CONTINUE;
 				}
@@ -50,4 +49,5 @@ public class TestUtil {
 			e.printStackTrace();
 		}
 	}
+
 }

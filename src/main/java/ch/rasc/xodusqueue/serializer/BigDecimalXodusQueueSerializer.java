@@ -33,17 +33,15 @@ public class BigDecimalXodusQueueSerializer implements XodusQueueSerializer<BigD
 		int scale = IntegerBinding.readCompressed(bi);
 		ArrayByteIterable unscaledValueByteArray = new ArrayByteIterable(bi);
 		BigInteger unscaledValue = new BigInteger(
-				Arrays.copyOf(unscaledValueByteArray.getBytesUnsafe(),
-						unscaledValueByteArray.getLength()));
+				Arrays.copyOf(unscaledValueByteArray.getBytesUnsafe(), unscaledValueByteArray.getLength()));
 
 		return new BigDecimal(unscaledValue, scale);
 	}
 
 	@Override
 	public ByteIterable toEntry(BigDecimal element) {
-		return new CompoundByteIterable(
-				new ByteIterable[] { IntegerBinding.intToCompressedEntry(element.scale()),
-						new ArrayByteIterable(element.unscaledValue().toByteArray()) });
+		return new CompoundByteIterable(new ByteIterable[] { IntegerBinding.intToCompressedEntry(element.scale()),
+				new ArrayByteIterable(element.unscaledValue().toByteArray()) });
 	}
 
 }

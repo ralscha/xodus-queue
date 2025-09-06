@@ -312,8 +312,7 @@ class XodusQueueTest {
 			queue.offer(three);
 			Assertions.assertEquals(3, queue.size());
 
-			Assertions.assertFalse(
-					queue.removeAll(Collections.singleton(new TestPojo(4, "Dean"))));
+			Assertions.assertFalse(queue.removeAll(Collections.singleton(new TestPojo(4, "Dean"))));
 			Assertions.assertTrue(queue.removeAll(Collections.singleton(one)));
 			Assertions.assertEquals(2, queue.size());
 
@@ -325,8 +324,7 @@ class XodusQueueTest {
 			queue.offer(two);
 			queue.offer(three);
 			Assertions.assertEquals(3, queue.size());
-			Assertions.assertTrue(queue
-					.removeAll(Arrays.asList(one, two, three, new TestPojo(4, "Dean"))));
+			Assertions.assertTrue(queue.removeAll(Arrays.asList(one, two, three, new TestPojo(4, "Dean"))));
 			Assertions.assertEquals(0, queue.size());
 			Assertions.assertTrue(queue.isEmpty());
 		}
@@ -346,8 +344,7 @@ class XodusQueueTest {
 			queue.offer(three);
 			Assertions.assertEquals(3, queue.size());
 
-			Assertions.assertTrue(
-					queue.retainAll(Collections.singleton(new TestPojo(4, "Dean"))));
+			Assertions.assertTrue(queue.retainAll(Collections.singleton(new TestPojo(4, "Dean"))));
 			Assertions.assertEquals(0, queue.size());
 
 			queue.offer(one);
@@ -362,8 +359,7 @@ class XodusQueueTest {
 			queue.offer(two);
 			queue.offer(three);
 			Assertions.assertEquals(3, queue.size());
-			Assertions.assertFalse(queue
-					.retainAll(Arrays.asList(one, two, three, new TestPojo(4, "Dean"))));
+			Assertions.assertFalse(queue.retainAll(Arrays.asList(one, two, three, new TestPojo(4, "Dean"))));
 			Assertions.assertEquals(3, queue.size());
 		}
 	}
@@ -446,8 +442,7 @@ class XodusQueueTest {
 			Assertions.assertTrue(queue.containsAll(Arrays.asList(one, two)));
 			Assertions.assertTrue(queue.containsAll(Arrays.asList(one)));
 			Assertions.assertTrue(queue.containsAll(Collections.emptyList()));
-			Assertions.assertFalse(
-					queue.containsAll(Arrays.asList(one, two, new TestPojo(4, "Adam"))));
+			Assertions.assertFalse(queue.containsAll(Arrays.asList(one, two, new TestPojo(4, "Adam"))));
 
 			queue.poll();
 			Assertions.assertFalse(queue.containsAll(Arrays.asList(one, two, three)));
@@ -489,8 +484,7 @@ class XodusQueueTest {
 			Assertions.assertArrayEquals(new String[] { "one", "two", "three" }, result);
 
 			result = queue.toArray(new String[4]);
-			Assertions.assertArrayEquals(new String[] { "one", "two", "three", null },
-					result);
+			Assertions.assertArrayEquals(new String[] { "one", "two", "three", null }, result);
 
 			queue.clear();
 			result = queue.toArray(new String[5]);

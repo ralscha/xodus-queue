@@ -41,22 +41,19 @@ class XodusBlockingQueueCapacityTest {
 
 	@Test
 	void testShutdown() {
-		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest",
-				String.class, 4)) {
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest", String.class, 4)) {
 			queue.add("one");
 			queue.add("two");
 			queue.add("three");
 			Assertions.assertEquals(3, queue.size());
 		}
 
-		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest",
-				String.class, 4)) {
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest", String.class, 4)) {
 			queue.add("four");
 			Assertions.assertEquals(4, queue.size());
 		}
 
-		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest",
-				String.class, 4)) {
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest", String.class, 4)) {
 			Assertions.assertEquals("one", queue.remove());
 			Assertions.assertEquals(3, queue.size());
 		}
@@ -64,8 +61,7 @@ class XodusBlockingQueueCapacityTest {
 
 	@Test
 	void testClear() {
-		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest",
-				String.class, 3)) {
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest", String.class, 3)) {
 
 			CountDownLatch countDown1 = new CountDownLatch(3);
 			CountDownLatch countDown2 = new CountDownLatch(3);
@@ -110,8 +106,7 @@ class XodusBlockingQueueCapacityTest {
 
 	@Test
 	void testAddT() {
-		try (XodusBlockingQueue<Long> queue = new XodusBlockingQueue<>("./blockingtest",
-				Long.class, 1)) {
+		try (XodusBlockingQueue<Long> queue = new XodusBlockingQueue<>("./blockingtest", Long.class, 1)) {
 			Assertions.assertTrue(queue.add(1L));
 			Assertions.assertThrows(IllegalStateException.class, () -> queue.add(2L));
 			Assertions.assertEquals(1L, (long) queue.remove());
@@ -122,8 +117,7 @@ class XodusBlockingQueueCapacityTest {
 
 	@Test
 	void testOfferT() {
-		try (XodusBlockingQueue<Long> queue = new XodusBlockingQueue<>("./blockingtest",
-				Long.class, 1)) {
+		try (XodusBlockingQueue<Long> queue = new XodusBlockingQueue<>("./blockingtest", Long.class, 1)) {
 			Assertions.assertTrue(queue.offer(1L));
 			Assertions.assertFalse(queue.offer(2L));
 			Assertions.assertEquals(1L, (long) queue.remove());
@@ -134,8 +128,7 @@ class XodusBlockingQueueCapacityTest {
 
 	@Test
 	void testOfferTLongTimeUnit() {
-		try (XodusBlockingQueue<Long> queue = new XodusBlockingQueue<>("./blockingtest",
-				Long.class, 1)) {
+		try (XodusBlockingQueue<Long> queue = new XodusBlockingQueue<>("./blockingtest", Long.class, 1)) {
 			try {
 				Assertions.assertTrue(queue.offer(1L, 2, TimeUnit.SECONDS));
 				Assertions.assertFalse(queue.offer(2L, 2, TimeUnit.SECONDS));
@@ -148,8 +141,7 @@ class XodusBlockingQueueCapacityTest {
 
 	@Test
 	void testAddAllCollectionOfQextendsT() {
-		try (XodusBlockingQueue<Long> queue = new XodusBlockingQueue<>("./blockingtest",
-				Long.class, 3)) {
+		try (XodusBlockingQueue<Long> queue = new XodusBlockingQueue<>("./blockingtest", Long.class, 3)) {
 			Assertions.assertThrows(IllegalStateException.class,
 					() -> queue.addAll(Arrays.asList(1L, 2L, 3L, 4L, 5L, 6L)));
 			Assertions.assertEquals(3, queue.size());
@@ -163,8 +155,7 @@ class XodusBlockingQueueCapacityTest {
 
 	@Test
 	void testRemove() {
-		try (XodusBlockingQueue<Long> queue = new XodusBlockingQueue<>("./blockingtest",
-				Long.class, 1)) {
+		try (XodusBlockingQueue<Long> queue = new XodusBlockingQueue<>("./blockingtest", Long.class, 1)) {
 			Assertions.assertThrows(NoSuchElementException.class, () -> queue.remove());
 
 			Assertions.assertTrue(queue.offer(1L));
@@ -174,8 +165,7 @@ class XodusBlockingQueueCapacityTest {
 
 	@Test
 	void testPoll() {
-		try (XodusBlockingQueue<Long> queue = new XodusBlockingQueue<>("./blockingtest",
-				Long.class, 1)) {
+		try (XodusBlockingQueue<Long> queue = new XodusBlockingQueue<>("./blockingtest", Long.class, 1)) {
 			Assertions.assertNull(queue.poll());
 
 			Assertions.assertTrue(queue.offer(1L));
@@ -185,8 +175,7 @@ class XodusBlockingQueueCapacityTest {
 
 	@Test
 	void testPollLongTimeUnit() {
-		try (XodusBlockingQueue<Long> queue = new XodusBlockingQueue<>("./blockingtest",
-				Long.class, 1)) {
+		try (XodusBlockingQueue<Long> queue = new XodusBlockingQueue<>("./blockingtest", Long.class, 1)) {
 			try {
 				Assertions.assertNull(queue.poll(2, TimeUnit.SECONDS));
 				Assertions.assertTrue(queue.offer(1L));
@@ -201,8 +190,7 @@ class XodusBlockingQueueCapacityTest {
 
 	@Test
 	void testTake() {
-		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest",
-				String.class, 1)) {
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest", String.class, 1)) {
 
 			CountDownLatch countDown = new CountDownLatch(10);
 
@@ -244,8 +232,7 @@ class XodusBlockingQueueCapacityTest {
 
 	@Test
 	void testRemoveObject() {
-		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest",
-				String.class, 1)) {
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest", String.class, 1)) {
 
 			CountDownLatch countDown = new CountDownLatch(1);
 
@@ -276,8 +263,7 @@ class XodusBlockingQueueCapacityTest {
 
 	@Test
 	void testRemoveAllCollectionOfQ() {
-		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest",
-				String.class, 3)) {
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest", String.class, 3)) {
 
 			CountDownLatch countDown = new CountDownLatch(1);
 
@@ -312,8 +298,7 @@ class XodusBlockingQueueCapacityTest {
 	@Test
 	void testRetainAllCollectionOfQ() {
 
-		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest",
-				String.class, 3)) {
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest", String.class, 3)) {
 
 			CountDownLatch countDown = new CountDownLatch(1);
 
@@ -349,8 +334,7 @@ class XodusBlockingQueueCapacityTest {
 	@Test
 	void testDrainToCollectionOfQsuperTInt() {
 
-		try (XodusBlockingQueue<Long> queue = new XodusBlockingQueue<>("./blockingtest",
-				Long.class, 3)) {
+		try (XodusBlockingQueue<Long> queue = new XodusBlockingQueue<>("./blockingtest", Long.class, 3)) {
 			Assertions.assertTrue(queue.offer(11L));
 			Assertions.assertTrue(queue.offer(22L));
 			Assertions.assertTrue(queue.offer(33L));
@@ -379,8 +363,7 @@ class XodusBlockingQueueCapacityTest {
 
 	@Test
 	void testDrainToCollectionOfQsuperT() {
-		try (XodusBlockingQueue<Long> queue = new XodusBlockingQueue<>("./blockingtest",
-				Long.class, 3)) {
+		try (XodusBlockingQueue<Long> queue = new XodusBlockingQueue<>("./blockingtest", Long.class, 3)) {
 			Assertions.assertTrue(queue.offer(11L));
 			Assertions.assertTrue(queue.offer(22L));
 			Assertions.assertTrue(queue.offer(33L));
@@ -394,6 +377,149 @@ class XodusBlockingQueueCapacityTest {
 			Assertions.assertEquals(22L, (long) c.get(1));
 			Assertions.assertEquals(33L, (long) c.get(2));
 			Assertions.assertEquals(0, queue.size());
+		}
+	}
+
+	@Test
+	void testPut() {
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest", String.class, 1)) {
+
+			CountDownLatch countDown = new CountDownLatch(1);
+
+			Thread producer = new Thread(() -> {
+				try {
+					queue.put("first");
+					countDown.countDown();
+					queue.put("second");
+				}
+				catch (InterruptedException e) {
+					Assertions.fail(e);
+				}
+			});
+
+			try {
+				producer.start();
+				countDown.await();
+				Assertions.assertEquals("first", queue.take());
+				TimeUnit.MILLISECONDS.sleep(100);
+				Assertions.assertEquals("second", queue.take());
+			}
+			catch (InterruptedException e) {
+				Assertions.fail(e);
+			}
+		}
+	}
+
+	@Test
+	void testPeek() {
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest", String.class, 1)) {
+			Assertions.assertNull(queue.peek());
+			queue.offer("one");
+			Assertions.assertEquals("one", queue.peek());
+			Assertions.assertEquals(1, queue.size());
+		}
+	}
+
+	@Test
+	void testElement() {
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest", String.class, 1)) {
+			Assertions.assertThrows(NoSuchElementException.class, () -> queue.element());
+			queue.offer("one");
+			Assertions.assertEquals("one", queue.element());
+			Assertions.assertEquals(1, queue.size());
+		}
+	}
+
+	@Test
+	void testIsEmpty() {
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest", String.class, 1)) {
+			Assertions.assertTrue(queue.isEmpty());
+			queue.offer("one");
+			Assertions.assertFalse(queue.isEmpty());
+			queue.poll();
+			Assertions.assertTrue(queue.isEmpty());
+		}
+	}
+
+	@Test
+	void testContains() {
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest", String.class, 3)) {
+			Assertions.assertFalse(queue.contains("one"));
+			queue.offer("one");
+			queue.offer("two");
+			Assertions.assertTrue(queue.contains("one"));
+			Assertions.assertTrue(queue.contains("two"));
+			Assertions.assertFalse(queue.contains("three"));
+		}
+	}
+
+	@Test
+	void testToArray() {
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest", String.class, 3)) {
+			queue.offer("one");
+			queue.offer("two");
+			Object[] arr = queue.toArray();
+			Assertions.assertEquals(2, arr.length);
+			Assertions.assertEquals("one", arr[0]);
+			Assertions.assertEquals("two", arr[1]);
+		}
+	}
+
+	@Test
+	void testToArrayTArray() {
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest", String.class, 3)) {
+			queue.offer("one");
+			queue.offer("two");
+			String[] arr = queue.toArray(new String[0]);
+			Assertions.assertEquals(2, arr.length);
+			Assertions.assertEquals("one", arr[0]);
+			Assertions.assertEquals("two", arr[1]);
+		}
+	}
+
+	@Test
+	void testIterator() {
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest", String.class, 3)) {
+			queue.offer("one");
+			queue.offer("two");
+			var iterator = queue.iterator();
+			Assertions.assertTrue(iterator.hasNext());
+			Assertions.assertEquals("one", iterator.next());
+			Assertions.assertTrue(iterator.hasNext());
+			Assertions.assertEquals("two", iterator.next());
+			Assertions.assertFalse(iterator.hasNext());
+		}
+	}
+
+	@Test
+	void testNullElement() {
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest", String.class, 1)) {
+			Assertions.assertThrows(NullPointerException.class, () -> queue.add(null));
+			Assertions.assertThrows(NullPointerException.class, () -> queue.offer(null));
+			Assertions.assertThrows(NullPointerException.class, () -> queue.put(null));
+		}
+	}
+
+	@Test
+	void testInterruptedException() {
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest", String.class, 1)) {
+			queue.offer("one"); // fill to capacity
+
+			Thread consumer = new Thread(() -> {
+				try {
+					queue.take();
+				}
+				catch (InterruptedException e) {
+					// Expected
+				}
+			});
+
+			consumer.start();
+			TimeUnit.MILLISECONDS.sleep(100);
+			consumer.interrupt();
+		}
+		catch (InterruptedException e) {
+			Assertions.fail(e);
 		}
 	}
 

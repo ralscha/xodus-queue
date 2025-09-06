@@ -36,7 +36,7 @@ public class XodusBlockingQueue<T> extends XodusQueue<T> implements BlockingQueu
 	/** Condition for waiting puts */
 	private Condition notFull;
 
-	private long capcity;
+	private long capacity;
 
 	public XodusBlockingQueue(LogConfig logConfig, EnvironmentConfig environmentConfig,
 			XodusQueueSerializer<T> serializer, long capacity) {
@@ -49,8 +49,7 @@ public class XodusBlockingQueue<T> extends XodusQueue<T> implements BlockingQueu
 		initLocks(capacity, false);
 	}
 
-	public XodusBlockingQueue(String databaseDir, XodusQueueSerializer<T> serializer,
-			long capacity) {
+	public XodusBlockingQueue(String databaseDir, XodusQueueSerializer<T> serializer, long capacity) {
 		super(databaseDir, serializer);
 		initLocks(capacity, false);
 	}
@@ -61,20 +60,18 @@ public class XodusBlockingQueue<T> extends XodusQueue<T> implements BlockingQueu
 		initLocks(capacity, fair);
 	}
 
-	public XodusBlockingQueue(String databaseDir, Class<T> entryClass, long capacity,
-			boolean fair) {
+	public XodusBlockingQueue(String databaseDir, Class<T> entryClass, long capacity, boolean fair) {
 		super(databaseDir, entryClass);
 		initLocks(capacity, fair);
 	}
 
-	public XodusBlockingQueue(String databaseDir, XodusQueueSerializer<T> serializer,
-			long capacity, boolean fair) {
+	public XodusBlockingQueue(String databaseDir, XodusQueueSerializer<T> serializer, long capacity, boolean fair) {
 		super(databaseDir, serializer);
 		initLocks(capacity, fair);
 	}
 
 	private void initLocks(long capacity, boolean fair) {
-		this.capcity = capacity;
+		this.capacity = capacity;
 		this.reentrantLock = new ReentrantLock(fair);
 		this.notEmpty = this.reentrantLock.newCondition();
 		this.notFull = this.reentrantLock.newCondition();
@@ -87,10 +84,11 @@ public class XodusBlockingQueue<T> extends XodusQueue<T> implements BlockingQueu
 		final ReentrantLock lock = this.reentrantLock;
 		lock.lockInterruptibly();
 		try {
-			while (super.sizeLong() >= this.capcity) {
+			while (super.sizeLong() >= this.capacity) {
 				this.notFull.await();
 			}
-			offer(e);
+			super.offer(e);
+			this.notEmpty.signal();
 		}
 		finally {
 			lock.unlock();
@@ -105,13 +103,14 @@ public class XodusBlockingQueue<T> extends XodusQueue<T> implements BlockingQueu
 		final ReentrantLock lock = this.reentrantLock;
 		lock.lockInterruptibly();
 		try {
-			while (super.sizeLong() >= this.capcity) {
+			while (super.sizeLong() >= this.capacity) {
 				if (nanos <= 0) {
 					return false;
 				}
 				nanos = this.notFull.awaitNanos(nanos);
 			}
-			offer(e);
+			super.offer(e);
+			this.notEmpty.signal();
 			return true;
 		}
 		finally {
@@ -126,7 +125,7 @@ public class XodusBlockingQueue<T> extends XodusQueue<T> implements BlockingQueu
 		final ReentrantLock lock = this.reentrantLock;
 		lock.lock();
 		try {
-			if (super.sizeLong() >= this.capcity) {
+			if (super.sizeLong() >= this.capacity) {
 				return false;
 			}
 
@@ -175,7 +174,7 @@ public class XodusBlockingQueue<T> extends XodusQueue<T> implements BlockingQueu
 		final ReentrantLock lock = this.reentrantLock;
 		lock.lockInterruptibly();
 		try {
-			while (super.size() == 0) {
+			while (super.sizeLong() == 0) {
 				this.notEmpty.await();
 			}
 			return poll();
@@ -191,7 +190,7 @@ public class XodusBlockingQueue<T> extends XodusQueue<T> implements BlockingQueu
 		final ReentrantLock lock = this.reentrantLock;
 		lock.lockInterruptibly();
 		try {
-			while (super.size() == 0) {
+			while (super.sizeLong() == 0) {
 				if (nanos <= 0) {
 					return null;
 				}
@@ -206,7 +205,15 @@ public class XodusBlockingQueue<T> extends XodusQueue<T> implements BlockingQueu
 
 	@Override
 	public int remainingCapacity() {
-		return Integer.MAX_VALUE;
+		final ReentrantLock lock = this.reentrantLock;
+		lock.lock();
+		try {
+			long remaining = this.capacity - super.sizeLong();
+			return remaining > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) remaining;
+		}
+		finally {
+			lock.unlock();
+		}
 	}
 
 	@Override
@@ -245,7 +252,7 @@ public class XodusBlockingQueue<T> extends XodusQueue<T> implements BlockingQueu
 		final ReentrantLock lock = this.reentrantLock;
 		lock.lock();
 		try {
-			int k = super.size();
+			long k = super.sizeLong();
 			super.clear();
 			for (; k > 0 && lock.hasWaiters(this.notFull); k--) {
 				this.notFull.signal();
@@ -277,12 +284,11 @@ public class XodusBlockingQueue<T> extends XodusQueue<T> implements BlockingQueu
 		final ReentrantLock lock = this.reentrantLock;
 		lock.lock();
 		try {
-			int sizeBefore = super.size();
+			long sizeBefore = super.sizeLong();
 			boolean removed = super.removeAll(c);
 			if (removed) {
-				int sizeAfter = super.size();
-				for (int i = sizeAfter - sizeBefore; i > 0
-						&& lock.hasWaiters(this.notFull); i--) {
+				long sizeAfter = super.sizeLong();
+				for (long i = sizeBefore - sizeAfter; i > 0 && lock.hasWaiters(this.notFull); i--) {
 					this.notFull.signal();
 				}
 			}
@@ -298,12 +304,11 @@ public class XodusBlockingQueue<T> extends XodusQueue<T> implements BlockingQueu
 		final ReentrantLock lock = this.reentrantLock;
 		lock.lock();
 		try {
-			int sizeBefore = super.size();
+			long sizeBefore = super.sizeLong();
 			boolean changed = super.retainAll(c);
 			if (changed) {
-				int sizeAfter = super.size();
-				for (int i = sizeAfter - sizeBefore; i > 0
-						&& lock.hasWaiters(this.notFull); i--) {
+				long sizeAfter = super.sizeLong();
+				for (long i = sizeBefore - sizeAfter; i > 0 && lock.hasWaiters(this.notFull); i--) {
 					this.notFull.signal();
 				}
 			}
