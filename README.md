@@ -55,17 +55,21 @@ The library is hosted on the Central Maven Repository
   <dependency>
     <groupId>ch.rasc</groupId>
     <artifactId>xodus-queue</artifactId>
-    <version>1.0.1</version>
+    <version>2.0.0</version>
   </dependency>
 ```
 
 
 ## Changelog
 
+### 2.0.0 - Sep 6, 2025
+  * Minimum Java 17
+  * Fix concurrency issues
+  * Upgrade Kryo library
+
 ### 1.0.1 - May 19, 2018
   * Fix key management in XodusQueue
   * Add `java.util.concurrent.BlockingQueue` implementation: XodusBlockingQueue
-
 
 ### 1.0.0 - May 15, 2018
   * Initial release
