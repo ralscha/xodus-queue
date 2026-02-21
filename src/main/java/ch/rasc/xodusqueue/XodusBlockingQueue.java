@@ -16,6 +16,7 @@
 package ch.rasc.xodusqueue;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.Objects;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
@@ -37,6 +38,19 @@ public class XodusBlockingQueue<T> extends XodusQueue<T> implements BlockingQueu
 	private Condition notFull;
 
 	private long capacity;
+
+	public XodusBlockingQueue(String databaseDir, Class<T> entryClass) {
+		this(databaseDir, entryClass, Long.MAX_VALUE);
+	}
+
+	public XodusBlockingQueue(String databaseDir, XodusQueueSerializer<T> serializer) {
+		this(databaseDir, serializer, Long.MAX_VALUE);
+	}
+
+	public XodusBlockingQueue(LogConfig logConfig, EnvironmentConfig environmentConfig,
+			XodusQueueSerializer<T> serializer) {
+		this(logConfig, environmentConfig, serializer, Long.MAX_VALUE);
+	}
 
 	public XodusBlockingQueue(LogConfig logConfig, EnvironmentConfig environmentConfig,
 			XodusQueueSerializer<T> serializer, long capacity) {
@@ -161,7 +175,9 @@ public class XodusBlockingQueue<T> extends XodusQueue<T> implements BlockingQueu
 		lock.lock();
 		try {
 			T e = super.poll();
-			this.notFull.signal();
+			if (e != null) {
+				this.notFull.signal();
+			}
 			return e;
 		}
 		finally {
@@ -177,7 +193,9 @@ public class XodusBlockingQueue<T> extends XodusQueue<T> implements BlockingQueu
 			while (super.sizeLong() == 0) {
 				this.notEmpty.await();
 			}
-			return poll();
+			T e = super.poll();
+			this.notFull.signal();
+			return e;
 		}
 		finally {
 			lock.unlock();
@@ -196,7 +214,9 @@ public class XodusBlockingQueue<T> extends XodusQueue<T> implements BlockingQueu
 				}
 				nanos = this.notEmpty.awaitNanos(nanos);
 			}
-			return poll();
+			T e = super.poll();
+			this.notFull.signal();
+			return e;
 		}
 		finally {
 			lock.unlock();
@@ -313,6 +333,115 @@ public class XodusBlockingQueue<T> extends XodusQueue<T> implements BlockingQueu
 				}
 			}
 			return changed;
+		}
+		finally {
+			lock.unlock();
+		}
+	}
+
+	@Override
+	public T peek() {
+		final ReentrantLock lock = this.reentrantLock;
+		lock.lock();
+		try {
+			return super.peek();
+		}
+		finally {
+			lock.unlock();
+		}
+	}
+
+	@Override
+	public int size() {
+		final ReentrantLock lock = this.reentrantLock;
+		lock.lock();
+		try {
+			return super.size();
+		}
+		finally {
+			lock.unlock();
+		}
+	}
+
+	@Override
+	public long sizeLong() {
+		final ReentrantLock lock = this.reentrantLock;
+		lock.lock();
+		try {
+			return super.sizeLong();
+		}
+		finally {
+			lock.unlock();
+		}
+	}
+
+	@Override
+	public boolean isEmpty() {
+		final ReentrantLock lock = this.reentrantLock;
+		lock.lock();
+		try {
+			return super.isEmpty();
+		}
+		finally {
+			lock.unlock();
+		}
+	}
+
+	@Override
+	public boolean contains(Object o) {
+		final ReentrantLock lock = this.reentrantLock;
+		lock.lock();
+		try {
+			return super.contains(o);
+		}
+		finally {
+			lock.unlock();
+		}
+	}
+
+	@Override
+	public boolean containsAll(Collection<?> c) {
+		final ReentrantLock lock = this.reentrantLock;
+		lock.lock();
+		try {
+			return super.containsAll(c);
+		}
+		finally {
+			lock.unlock();
+		}
+	}
+
+	@Override
+	public Object[] toArray() {
+		final ReentrantLock lock = this.reentrantLock;
+		lock.lock();
+		try {
+			return super.toArray();
+		}
+		finally {
+			lock.unlock();
+		}
+	}
+
+	@SuppressWarnings({ "unchecked", "hiding" })
+	@Override
+	public <T> T[] toArray(T[] a) {
+		final ReentrantLock lock = this.reentrantLock;
+		lock.lock();
+		try {
+			return super.toArray(a);
+		}
+		finally {
+			lock.unlock();
+		}
+	}
+
+	@Override
+	public Iterator<T> iterator() {
+		final ReentrantLock lock = this.reentrantLock;
+		lock.lock();
+		try {
+			return super.iterator();
 		}
 		finally {
 			lock.unlock();

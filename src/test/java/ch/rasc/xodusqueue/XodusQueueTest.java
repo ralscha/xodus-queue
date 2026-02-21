@@ -171,7 +171,7 @@ class XodusQueueTest {
 	@Test
 	void testAddAllCollectionOfQextendsT() {
 		try (XodusQueue<Integer> queue = new XodusQueue<>("./test", Integer.class)) {
-			Assertions.assertThrows(NullPointerException.class, null);
+			Assertions.assertThrows(NullPointerException.class, () -> queue.addAll(null));
 
 			Assertions.assertTrue(queue.addAll(Arrays.asList(1, 2, 3, 4, 5)));
 			Assertions.assertEquals(5, queue.size());

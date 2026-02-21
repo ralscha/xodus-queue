@@ -22,8 +22,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Collections;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicLong;
 
 import ch.rasc.xodusqueue.serializer.BigDecimalXodusQueueSerializer;
 import ch.rasc.xodusqueue.serializer.BigIntegerXodusQueueSerializer;
@@ -56,8 +56,6 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 	private final Environment env;
 
 	private final XodusQueueSerializer<T> serializer;
-
-	private final AtomicLong key = new AtomicLong(0L);
 
 	@SuppressWarnings("unchecked")
 	public XodusQueue(final String databaseDir, final Class<T> entryClass) {
@@ -96,42 +94,17 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 		else {
 			this.serializer = new DefaultXodusQueueSerializer<>(entryClass);
 		}
-
-		this.key.set(this.lastKey());
 	}
 
 	public XodusQueue(final String databaseDir, final XodusQueueSerializer<T> serializer) {
 		this.env = Environments.newInstance(databaseDir);
 		this.serializer = serializer;
-
-		this.key.set(this.lastKey());
 	}
 
 	public XodusQueue(final LogConfig logConfig, final EnvironmentConfig environmentConfig,
 			final XodusQueueSerializer<T> serializer) {
 		this.env = Environments.newInstance(logConfig, environmentConfig);
 		this.serializer = serializer;
-
-		this.key.set(this.lastKey());
-	}
-
-	/**
-	 * Returns the last key stored in the queue store or 0 if the store is empty.
-	 */
-	private long lastKey() {
-		return this.env.computeInReadonlyTransaction(txn -> {
-			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES, txn, false);
-			if (store == null) {
-				return 0L;
-			}
-
-			try (Cursor cursor = store.openCursor(txn)) {
-				if (cursor.getLast()) {
-					return LongBinding.entryToLong(cursor.getKey());
-				}
-			}
-			return 0L;
-		});
 	}
 
 	@Override
@@ -149,7 +122,6 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 			}
 
 			store.putRight(txn, LongBinding.longToEntry(nextKey), this.serializer.toEntry(e));
-			this.key.set(nextKey);
 		});
 
 		return true;
@@ -180,10 +152,6 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 				last++;
 				store.putRight(txn, LongBinding.longToEntry(last), this.serializer.toEntry(e));
 				modified = true;
-			}
-
-			if (modified) {
-				this.key.set(last);
 			}
 
 			return modified;
@@ -285,7 +253,7 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 				}
 			}
 		});
-		return snapshot.iterator();
+		return Collections.unmodifiableList(snapshot).iterator();
 	}
 
 	@Override
@@ -324,7 +292,13 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 						r[ix++] = (T) this.serializer.fromEntry(value);
 					}
 				}
+				if (r.length > ix) {
+					r[ix] = null;
+				}
 				return r;
+			}
+			if (a.length > 0) {
+				a[0] = null;
 			}
 			return a;
 		});
@@ -332,6 +306,9 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 
 	@Override
 	public boolean remove(Object o) {
+		if (o == null) {
+			return false;
+		}
 		return this.env.computeInExclusiveTransaction(txn -> {
 			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES, txn, false);
 
@@ -352,6 +329,10 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 
 	@Override
 	public boolean containsAll(Collection<?> c) {
+		Objects.requireNonNull(c);
+		if (c.isEmpty()) {
+			return true;
+		}
 		return this.env.computeInReadonlyTransaction(txn -> {
 			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES, txn, false);
 			if (store != null) {
@@ -428,7 +409,6 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 	public void clear() {
 		this.env.executeInExclusiveTransaction(txn -> {
 			this.env.truncateStore(STORE_NAME, txn);
-			this.key.set(0L);
 		});
 	}
 
