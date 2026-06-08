@@ -23,11 +23,9 @@ try (XodusQueue<String> queue = new XodusQueue<>("./test", String.class)) {
 ```
 
 After the instantiation, you can call any of the methods from the `java.util.Queue<E>` and `java.util.concurrent.BlockingQueue<E>` interface.
-See the JavaDoc ([Queue](https://docs.oracle.com/javase/10/docs/api/java/util/Queue.html), [BlockingQueue](https://docs.oracle.com/javase/10/docs/api/java/util/concurrent/BlockingQueue.html)) for a list of all available methods.
+See the JavaDoc ([Queue](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/Queue.html), [BlockingQueue](https://docs.oracle.com/en/java/javase/17/docs/api/java.base/java/util/concurrent/BlockingQueue.html)) for a list of all available methods.
 
-Currently [`iterator()`](https://docs.oracle.com/javase/10/docs/api/java/util/Collection.html#iterator()) is not implemented.
-The underlying storage engine requires that read and write operations have to run inside transactions, and I don't know how
-to implement that in an iterator. 
+The `iterator()` method returns a snapshot of the queue contents at the time the iterator is created.
 
 ```
 try (XodusQueue<String> queue = new XodusQueue<>("./queue", String.class)) {
@@ -39,6 +37,7 @@ try (XodusQueue<String> queue = new XodusQueue<>("./queue", String.class)) {
 
 The blocking queue supports a capacity limit. The following example limits the number of elements in the queue to 3. 
 `put` blocks the current thread when the queue is full and `take` blocks when the queue is empty.
+The capacity must be greater than zero.
 ```
 try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blocking_queue", String.class, 3)) {
   queue.put("one");

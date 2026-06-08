@@ -54,34 +54,41 @@ public class XodusBlockingQueue<T> extends XodusQueue<T> implements BlockingQueu
 
 	public XodusBlockingQueue(LogConfig logConfig, EnvironmentConfig environmentConfig,
 			XodusQueueSerializer<T> serializer, long capacity) {
-		super(logConfig, environmentConfig, serializer);
+		super(validateCapacity(logConfig, capacity), environmentConfig, serializer);
 		initLocks(capacity, false);
 	}
 
 	public XodusBlockingQueue(String databaseDir, Class<T> entryClass, long capacity) {
-		super(databaseDir, entryClass);
+		super(validateCapacity(databaseDir, capacity), entryClass);
 		initLocks(capacity, false);
 	}
 
 	public XodusBlockingQueue(String databaseDir, XodusQueueSerializer<T> serializer, long capacity) {
-		super(databaseDir, serializer);
+		super(validateCapacity(databaseDir, capacity), serializer);
 		initLocks(capacity, false);
 	}
 
 	public XodusBlockingQueue(LogConfig logConfig, EnvironmentConfig environmentConfig,
 			XodusQueueSerializer<T> serializer, long capacity, boolean fair) {
-		super(logConfig, environmentConfig, serializer);
+		super(validateCapacity(logConfig, capacity), environmentConfig, serializer);
 		initLocks(capacity, fair);
 	}
 
 	public XodusBlockingQueue(String databaseDir, Class<T> entryClass, long capacity, boolean fair) {
-		super(databaseDir, entryClass);
+		super(validateCapacity(databaseDir, capacity), entryClass);
 		initLocks(capacity, fair);
 	}
 
 	public XodusBlockingQueue(String databaseDir, XodusQueueSerializer<T> serializer, long capacity, boolean fair) {
-		super(databaseDir, serializer);
+		super(validateCapacity(databaseDir, capacity), serializer);
 		initLocks(capacity, fair);
+	}
+
+	private static <T> T validateCapacity(T value, long capacity) {
+		if (capacity <= 0) {
+			throw new IllegalArgumentException("Capacity must be greater than zero");
+		}
+		return value;
 	}
 
 	private void initLocks(long capacity, boolean fair) {

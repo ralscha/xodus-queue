@@ -123,6 +123,14 @@ class AdditionalTests {
 	}
 
 	@Test
+	void testBlockingQueueRejectsNonPositiveCapacity() {
+		Assertions.assertThrows(IllegalArgumentException.class,
+				() -> new XodusBlockingQueue<>("./blockingtest_small", String.class, 0L));
+		Assertions.assertThrows(IllegalArgumentException.class,
+				() -> new XodusBlockingQueue<>("./blockingtest_small", String.class, -1L));
+	}
+
+	@Test
 	void testRemoveAllWithEmptyCollectionReturnsFalseWhenNotEmpty() {
 		try (XodusQueue<String> queue = new XodusQueue<>("./testedge5", String.class)) {
 			queue.add("a");

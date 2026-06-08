@@ -15,47 +15,42 @@
  */
 package ch.rasc.xodusqueue;
 
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 
 class XodusBlockingQueueTest {
 
-	@BeforeEach
-	public void deleteAll() {
-		TestUtil.deleteDirectory("./blockingtest");
-	}
+	@TempDir
+	Path tempDir;
 
-	@AfterAll
-	public static void deleteAllEnd() {
-		TestUtil.deleteDirectory("./blockingtest");
+	private String dbDir() {
+		return this.tempDir.resolve("blockingtest").toString();
 	}
 
 	@Test
 	void testShutdown() {
-		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest", String.class,
-				Long.MAX_VALUE)) {
+		String dbDir = dbDir();
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>(dbDir, String.class, Long.MAX_VALUE)) {
 			queue.add("one");
 			queue.add("two");
 			queue.add("three");
 			Assertions.assertEquals(3, queue.size());
 		}
 
-		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest", String.class,
-				Long.MAX_VALUE)) {
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>(dbDir, String.class, Long.MAX_VALUE)) {
 			queue.add("four");
 			Assertions.assertEquals(4, queue.size());
 		}
 
-		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest", String.class,
-				Long.MAX_VALUE)) {
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>(dbDir, String.class, Long.MAX_VALUE)) {
 			Assertions.assertEquals("one", queue.remove());
 			Assertions.assertEquals(3, queue.size());
 		}
@@ -63,8 +58,7 @@ class XodusBlockingQueueTest {
 
 	@Test
 	void testOfferTake() {
-		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest", String.class,
-				Long.MAX_VALUE)) {
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>(dbDir(), String.class, Long.MAX_VALUE)) {
 
 			CountDownLatch countDown = new CountDownLatch(10);
 
@@ -107,8 +101,7 @@ class XodusBlockingQueueTest {
 
 	@Test
 	void testPollLongTimeUnit() {
-		try (XodusBlockingQueue<Integer> queue = new XodusBlockingQueue<>("./blockingtest", Integer.class,
-				Long.MAX_VALUE)) {
+		try (XodusBlockingQueue<Integer> queue = new XodusBlockingQueue<>(dbDir(), Integer.class, Long.MAX_VALUE)) {
 
 			CountDownLatch countDown = new CountDownLatch(10);
 
@@ -159,7 +152,7 @@ class XodusBlockingQueueTest {
 
 	@Test
 	void testAddAllCollectionOfQextendsT() {
-		try (XodusBlockingQueue<Long> queue = new XodusBlockingQueue<>("./blockingtest", Long.class, Long.MAX_VALUE)) {
+		try (XodusBlockingQueue<Long> queue = new XodusBlockingQueue<>(dbDir(), Long.class, Long.MAX_VALUE)) {
 
 			CountDownLatch countDown = new CountDownLatch(6);
 
@@ -195,15 +188,14 @@ class XodusBlockingQueueTest {
 
 	@Test
 	void testRemainingCapacity() {
-		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest", String.class,
-				Long.MAX_VALUE)) {
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>(dbDir(), String.class, Long.MAX_VALUE)) {
 			Assertions.assertEquals(Integer.MAX_VALUE, queue.remainingCapacity());
 		}
 	}
 
 	@Test
 	void testDrainToCollectionOfQsuperT() {
-		try (XodusBlockingQueue<Long> queue = new XodusBlockingQueue<>("./blockingtest", Long.class, Long.MAX_VALUE)) {
+		try (XodusBlockingQueue<Long> queue = new XodusBlockingQueue<>(dbDir(), Long.class, Long.MAX_VALUE)) {
 			queue.offer(11L);
 			queue.offer(22L);
 			queue.offer(33L);
@@ -223,7 +215,7 @@ class XodusBlockingQueueTest {
 
 	@Test
 	void testDrainToCollectionOfQsuperTInt() {
-		try (XodusBlockingQueue<Long> queue = new XodusBlockingQueue<>("./blockingtest", Long.class, Long.MAX_VALUE)) {
+		try (XodusBlockingQueue<Long> queue = new XodusBlockingQueue<>(dbDir(), Long.class, Long.MAX_VALUE)) {
 			queue.offer(11L);
 			queue.offer(22L);
 			queue.offer(33L);
@@ -257,8 +249,7 @@ class XodusBlockingQueueTest {
 		CountDownLatch startLatch = new CountDownLatch(threadCount);
 		CountDownLatch latch = new CountDownLatch(threadCount);
 
-		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blockingtest", String.class,
-				Long.MAX_VALUE)) {
+		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>(dbDir(), String.class, Long.MAX_VALUE)) {
 			for (int i = 0; i < threadCount; i++) {
 				new Thread(Integer.toString(i)) {
 					@Override

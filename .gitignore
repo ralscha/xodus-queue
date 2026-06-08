@@ -13,3 +13,10 @@ buildNumber.properties
 .vscode
 # Avoid ignoring Maven wrapper jar file (.jar files are usually ignored)
 !/.mvn/wrapper/maven-wrapper.jar
+
+# Xodus databases created by local tests
+/blockingtest*/
+/test/
+/testedge*/
+/queue/
+/stress/
