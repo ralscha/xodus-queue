@@ -20,6 +20,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.Assertions;
@@ -245,33 +248,35 @@ class XodusBlockingQueueTest {
 	@Test
 	public void testMultipleThreads() throws Throwable {
 
-		int threadCount = 1_000;
-		CountDownLatch startLatch = new CountDownLatch(threadCount);
-		CountDownLatch latch = new CountDownLatch(threadCount);
+		int threadCount = 20;
+		int itemsPerThread = 25;
+		CountDownLatch startLatch = new CountDownLatch(1);
 
 		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>(dbDir(), String.class, Long.MAX_VALUE)) {
-			for (int i = 0; i < threadCount; i++) {
-				new Thread(Integer.toString(i)) {
-					@Override
-					public void run() {
-						try {
-							startLatch.countDown();
-							startLatch.await();
-							for (int j = 0; j < 10; j++) {
-								queue.put(getName());
-								TimeUnit.MILLISECONDS.sleep((long) (Math.random() * 300));
-							}
-							latch.countDown();
+			ExecutorService executor = Executors.newFixedThreadPool(threadCount);
+			try {
+				List<Future<?>> tasks = new ArrayList<>();
+				for (int i = 0; i < threadCount; i++) {
+					String value = Integer.toString(i);
+					tasks.add(executor.submit(() -> {
+						startLatch.await();
+						for (int j = 0; j < itemsPerThread; j++) {
+							queue.put(value);
 						}
-						catch (Throwable e) {
-							e.printStackTrace();
-						}
-					}
-				}.start();
-			}
+						return null;
+					}));
+				}
 
-			latch.await(5, TimeUnit.SECONDS);
-			assert queue.size() == 10 * threadCount;
+				startLatch.countDown();
+				for (Future<?> task : tasks) {
+					task.get(30, TimeUnit.SECONDS);
+				}
+				Assertions.assertEquals(itemsPerThread * threadCount, queue.size());
+			}
+			finally {
+				executor.shutdownNow();
+				Assertions.assertTrue(executor.awaitTermination(30, TimeUnit.SECONDS));
+			}
 		}
 
 	}

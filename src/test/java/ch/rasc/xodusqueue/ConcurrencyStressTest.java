@@ -15,10 +15,15 @@
  */
 package ch.rasc.xodusqueue;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.AfterAll;
@@ -44,60 +49,60 @@ public class ConcurrencyStressTest {
 		final int consumers = 50;
 		final int perProducer = 50; // total 2500 items
 
-		CountDownLatch startLatch = new CountDownLatch(producers + consumers);
-		CountDownLatch doneLatch = new CountDownLatch(consumers);
+		CountDownLatch startLatch = new CountDownLatch(1);
+		CountDownLatch producersDone = new CountDownLatch(producers);
+		ExecutorService executor = Executors.newFixedThreadPool(producers + consumers);
 
-		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./stress", String.class, Long.MAX_VALUE)) {
-
-			// track consumed items
+		XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./stress", String.class, Long.MAX_VALUE);
+		try {
 			final Set<String> consumed = Collections.newSetFromMap(new ConcurrentHashMap<>());
+			List<Future<?>> tasks = new ArrayList<>();
 
-			// start consumers
 			for (int c = 0; c < consumers; c++) {
-				new Thread(() -> {
-					try {
-						startLatch.countDown();
-						startLatch.await();
-						while (true) {
-							String v = queue.poll(200, TimeUnit.MILLISECONDS);
-							if (v == null) {
-								// assume producers done and queue drained
-								break;
-							}
-							consumed.add(v);
+				tasks.add(executor.submit(() -> {
+					startLatch.await();
+					while (producersDone.getCount() > 0 || !queue.isEmpty()) {
+						String v = queue.poll(200, TimeUnit.MILLISECONDS);
+						if (v != null) {
+							Assertions.assertTrue(consumed.add(v), () -> "Duplicate element: " + v);
 						}
 					}
-					catch (InterruptedException e) {
-						// ignore
-					}
-					finally {
-						doneLatch.countDown();
-					}
-				}).start();
+					return null;
+				}));
 			}
 
-			// start producers
 			for (int p = 0; p < producers; p++) {
 				final int pid = p;
-				new Thread(() -> {
+				tasks.add(executor.submit(() -> {
 					try {
-						startLatch.countDown();
 						startLatch.await();
 						for (int i = 0; i < perProducer; i++) {
 							queue.put(pid + "-" + i);
 						}
 					}
-					catch (InterruptedException e) {
-						// ignore
+					finally {
+						producersDone.countDown();
 					}
-				}).start();
+					return null;
+				}));
 			}
 
-			// wait consumers to finish
-			doneLatch.await(30, TimeUnit.SECONDS);
+			startLatch.countDown();
+			for (Future<?> task : tasks) {
+				task.get(30, TimeUnit.SECONDS);
+			}
 
-			// expect all items consumed
 			Assertions.assertEquals(producers * perProducer, consumed.size());
+			Assertions.assertTrue(queue.isEmpty());
+		}
+		finally {
+			executor.shutdownNow();
+			try {
+				Assertions.assertTrue(executor.awaitTermination(30, TimeUnit.SECONDS));
+			}
+			finally {
+				queue.close();
+			}
 		}
 	}
 
@@ -105,31 +110,43 @@ public class ConcurrencyStressTest {
 	public void testMultipleConcurrentPollersNoDupOrLoss() throws Exception {
 		final int items = 1000;
 		final int pollers = 10;
+		ExecutorService executor = Executors.newFixedThreadPool(pollers);
 
-		try (XodusQueue<Integer> queue = new XodusQueue<>("./stress", Integer.class)) {
+		XodusQueue<Integer> queue = new XodusQueue<>("./stress", Integer.class);
+		try {
 			for (int i = 0; i < items; i++) {
 				queue.add(i);
 			}
 
 			final Set<Integer> seen = Collections.newSetFromMap(new ConcurrentHashMap<>());
-			CountDownLatch latch = new CountDownLatch(pollers);
+			CountDownLatch startLatch = new CountDownLatch(1);
+			List<Future<?>> tasks = new ArrayList<>();
 
 			for (int p = 0; p < pollers; p++) {
-				new Thread(() -> {
-					try {
-						Integer v;
-						while ((v = queue.poll()) != null) {
-							seen.add(v);
-						}
+				tasks.add(executor.submit(() -> {
+					startLatch.await();
+					Integer v;
+					while ((v = queue.poll()) != null) {
+						Assertions.assertTrue(seen.add(v), "Duplicate element: " + v);
 					}
-					finally {
-						latch.countDown();
-					}
-				}).start();
+					return null;
+				}));
 			}
 
-			latch.await(10, TimeUnit.SECONDS);
+			startLatch.countDown();
+			for (Future<?> task : tasks) {
+				task.get(30, TimeUnit.SECONDS);
+			}
 			Assertions.assertEquals(items, seen.size());
+		}
+		finally {
+			executor.shutdownNow();
+			try {
+				Assertions.assertTrue(executor.awaitTermination(30, TimeUnit.SECONDS));
+			}
+			finally {
+				queue.close();
+			}
 		}
 	}
 

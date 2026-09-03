@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -501,20 +502,26 @@ class XodusBlockingQueueCapacityTest {
 	@Test
 	void testInterruptedException() {
 		try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>(dbDir(), String.class, 1)) {
-			queue.offer("one"); // fill to capacity
+			AtomicBoolean interrupted = new AtomicBoolean();
+			CountDownLatch started = new CountDownLatch(1);
 
 			Thread consumer = new Thread(() -> {
 				try {
+					started.countDown();
 					queue.take();
 				}
 				catch (InterruptedException e) {
-					// Expected
+					interrupted.set(true);
 				}
 			});
 
 			consumer.start();
+			Assertions.assertTrue(started.await(5, TimeUnit.SECONDS));
 			TimeUnit.MILLISECONDS.sleep(100);
 			consumer.interrupt();
+			consumer.join(TimeUnit.SECONDS.toMillis(5));
+			Assertions.assertFalse(consumer.isAlive());
+			Assertions.assertTrue(interrupted.get());
 		}
 		catch (InterruptedException e) {
 			Assertions.fail(e);

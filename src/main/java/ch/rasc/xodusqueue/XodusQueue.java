@@ -20,10 +20,11 @@ import java.math.BigInteger;
 import java.util.AbstractQueue;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Collections;
 import java.util.Objects;
+import java.util.function.Predicate;
 
 import ch.rasc.xodusqueue.serializer.BigDecimalXodusQueueSerializer;
 import ch.rasc.xodusqueue.serializer.BigIntegerXodusQueueSerializer;
@@ -57,54 +58,69 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 
 	private final XodusQueueSerializer<T> serializer;
 
-	@SuppressWarnings("unchecked")
 	public XodusQueue(final String databaseDir, final Class<T> entryClass) {
-		this.env = Environments.newInstance(databaseDir);
+		this(databaseDir, createSerializer(entryClass));
+	}
 
+	@SuppressWarnings("unchecked")
+	private static <T> XodusQueueSerializer<T> createSerializer(final Class<T> entryClass) {
+		Objects.requireNonNull(entryClass, "entryClass");
 		if (entryClass == String.class) {
-			this.serializer = (XodusQueueSerializer<T>) new StringXodusQueueSerializer();
+			return (XodusQueueSerializer<T>) new StringXodusQueueSerializer();
 		}
 		else if (entryClass == Integer.class) {
-			this.serializer = (XodusQueueSerializer<T>) new IntegerXodusQueueSerializer();
+			return (XodusQueueSerializer<T>) new IntegerXodusQueueSerializer();
 		}
 		else if (entryClass == Long.class) {
-			this.serializer = (XodusQueueSerializer<T>) new LongXodusQueueSerializer();
+			return (XodusQueueSerializer<T>) new LongXodusQueueSerializer();
 		}
 		else if (entryClass == Boolean.class) {
-			this.serializer = (XodusQueueSerializer<T>) new BooleanXodusQueueSerializer();
+			return (XodusQueueSerializer<T>) new BooleanXodusQueueSerializer();
 		}
 		else if (entryClass == Byte.class) {
-			this.serializer = (XodusQueueSerializer<T>) new ByteXodusQueueSerializer();
+			return (XodusQueueSerializer<T>) new ByteXodusQueueSerializer();
 		}
 		else if (entryClass == Double.class) {
-			this.serializer = (XodusQueueSerializer<T>) new DoubleXodusQueueSerializer();
+			return (XodusQueueSerializer<T>) new DoubleXodusQueueSerializer();
 		}
 		else if (entryClass == Float.class) {
-			this.serializer = (XodusQueueSerializer<T>) new FloatXodusQueueSerializer();
+			return (XodusQueueSerializer<T>) new FloatXodusQueueSerializer();
 		}
 		else if (entryClass == Short.class) {
-			this.serializer = (XodusQueueSerializer<T>) new ShortXodusQueueSerializer();
+			return (XodusQueueSerializer<T>) new ShortXodusQueueSerializer();
 		}
 		else if (entryClass == BigInteger.class) {
-			this.serializer = (XodusQueueSerializer<T>) new BigIntegerXodusQueueSerializer();
+			return (XodusQueueSerializer<T>) new BigIntegerXodusQueueSerializer();
 		}
 		else if (entryClass == BigDecimal.class) {
-			this.serializer = (XodusQueueSerializer<T>) new BigDecimalXodusQueueSerializer();
+			return (XodusQueueSerializer<T>) new BigDecimalXodusQueueSerializer();
 		}
-		else {
-			this.serializer = new DefaultXodusQueueSerializer<>(entryClass);
-		}
+		return new DefaultXodusQueueSerializer<>(entryClass);
 	}
 
 	public XodusQueue(final String databaseDir, final XodusQueueSerializer<T> serializer) {
-		this.env = Environments.newInstance(databaseDir);
+		this.env = openEnvironment(databaseDir, serializer);
 		this.serializer = serializer;
 	}
 
 	public XodusQueue(final LogConfig logConfig, final EnvironmentConfig environmentConfig,
 			final XodusQueueSerializer<T> serializer) {
-		this.env = Environments.newInstance(logConfig, environmentConfig);
+		this.env = openEnvironment(logConfig, environmentConfig, serializer);
 		this.serializer = serializer;
+	}
+
+	private static Environment openEnvironment(final String databaseDir, final XodusQueueSerializer<?> serializer) {
+		Objects.requireNonNull(databaseDir, "databaseDir");
+		Objects.requireNonNull(serializer, "serializer");
+		return Environments.newInstance(databaseDir);
+	}
+
+	private static Environment openEnvironment(final LogConfig logConfig, final EnvironmentConfig environmentConfig,
+			final XodusQueueSerializer<?> serializer) {
+		Objects.requireNonNull(logConfig, "logConfig");
+		Objects.requireNonNull(environmentConfig, "environmentConfig");
+		Objects.requireNonNull(serializer, "serializer");
+		return Environments.newInstance(logConfig, environmentConfig);
 	}
 
 	@Override
@@ -189,7 +205,7 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 
 	@Override
 	public int size() {
-		return (int) sizeLong();
+		return (int) Math.min(sizeLong(), Integer.MAX_VALUE);
 	}
 
 	public long sizeLong() {
@@ -330,6 +346,9 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 	@Override
 	public boolean containsAll(Collection<?> c) {
 		Objects.requireNonNull(c);
+		if (c == this) {
+			return true;
+		}
 		if (c.isEmpty()) {
 			return true;
 		}
@@ -350,6 +369,14 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 	@Override
 	public boolean removeAll(Collection<?> c) {
 		Objects.requireNonNull(c);
+
+		if (c == this) {
+			boolean modified = !isEmpty();
+			if (modified) {
+				clear();
+			}
+			return modified;
+		}
 
 		// Optimize for empty collection - no need to iterate
 		if (c.isEmpty()) {
@@ -378,6 +405,10 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 	public boolean retainAll(Collection<?> c) {
 		Objects.requireNonNull(c);
 
+		if (c == this) {
+			return false;
+		}
+
 		// Optimize for empty collection - clear everything
 		if (c.isEmpty()) {
 			if (!isEmpty()) {
@@ -395,6 +426,28 @@ public class XodusQueue<T> extends AbstractQueue<T> implements AutoCloseable {
 					while (cursor.getNext()) {
 						T e = this.serializer.fromEntry(cursor.getValue());
 						if (!c.contains(e)) {
+							cursor.deleteCurrent();
+							modified = true;
+						}
+					}
+				}
+			}
+			return modified;
+		});
+	}
+
+	@Override
+	public boolean removeIf(Predicate<? super T> filter) {
+		Objects.requireNonNull(filter);
+
+		return this.env.computeInExclusiveTransaction(txn -> {
+			Store store = this.env.openStore(STORE_NAME, StoreConfig.WITHOUT_DUPLICATES, txn, false);
+			boolean modified = false;
+			if (store != null) {
+				try (Cursor cursor = store.openCursor(txn)) {
+					while (cursor.getNext()) {
+						T e = this.serializer.fromEntry(cursor.getValue());
+						if (filter.test(e)) {
 							cursor.deleteCurrent();
 							modified = true;
 						}

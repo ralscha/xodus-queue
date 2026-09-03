@@ -15,6 +15,8 @@
  */
 package ch.rasc.xodusqueue.serializer;
 
+import java.util.Objects;
+
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
@@ -27,9 +29,10 @@ public class DefaultXodusQueueSerializer<T> implements XodusQueueSerializer<T> {
 
 	private final Pool<Kryo> kryoPool;
 
-	final Class<T> entryClass;
+	private final Class<T> entryClass;
 
 	public DefaultXodusQueueSerializer(final Class<T> entryClass) {
+		Objects.requireNonNull(entryClass, "entryClass");
 		this.kryoPool = new Pool<>(true, false, 8) {
 			@Override
 			protected Kryo create() {

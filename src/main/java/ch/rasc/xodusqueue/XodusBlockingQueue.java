@@ -22,6 +22,7 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Predicate;
 
 import ch.rasc.xodusqueue.serializer.XodusQueueSerializer;
 import jetbrains.exodus.env.EnvironmentConfig;
@@ -235,7 +236,11 @@ public class XodusBlockingQueue<T> extends XodusQueue<T> implements BlockingQueu
 		final ReentrantLock lock = this.reentrantLock;
 		lock.lock();
 		try {
-			long remaining = this.capacity - super.sizeLong();
+			long size = super.sizeLong();
+			if (size >= this.capacity) {
+				return 0;
+			}
+			long remaining = this.capacity - size;
 			return remaining > Integer.MAX_VALUE ? Integer.MAX_VALUE : (int) remaining;
 		}
 		finally {
@@ -264,8 +269,8 @@ public class XodusBlockingQueue<T> extends XodusQueue<T> implements BlockingQueu
 		lock.lock();
 		try {
 			int n = super.drainTo(c, maxElements);
-			for (int i = n; i > 0 && lock.hasWaiters(this.notFull); i--) {
-				this.notFull.signal();
+			if (n > 0) {
+				this.notFull.signalAll();
 			}
 			return n;
 		}
@@ -279,11 +284,8 @@ public class XodusBlockingQueue<T> extends XodusQueue<T> implements BlockingQueu
 		final ReentrantLock lock = this.reentrantLock;
 		lock.lock();
 		try {
-			long k = super.sizeLong();
 			super.clear();
-			for (; k > 0 && lock.hasWaiters(this.notFull); k--) {
-				this.notFull.signal();
-			}
+			this.notFull.signalAll();
 		}
 		finally {
 			lock.unlock();
@@ -311,13 +313,9 @@ public class XodusBlockingQueue<T> extends XodusQueue<T> implements BlockingQueu
 		final ReentrantLock lock = this.reentrantLock;
 		lock.lock();
 		try {
-			long sizeBefore = super.sizeLong();
 			boolean removed = super.removeAll(c);
 			if (removed) {
-				long sizeAfter = super.sizeLong();
-				for (long i = sizeBefore - sizeAfter; i > 0 && lock.hasWaiters(this.notFull); i--) {
-					this.notFull.signal();
-				}
+				this.notFull.signalAll();
 			}
 			return removed;
 		}
@@ -331,15 +329,27 @@ public class XodusBlockingQueue<T> extends XodusQueue<T> implements BlockingQueu
 		final ReentrantLock lock = this.reentrantLock;
 		lock.lock();
 		try {
-			long sizeBefore = super.sizeLong();
 			boolean changed = super.retainAll(c);
 			if (changed) {
-				long sizeAfter = super.sizeLong();
-				for (long i = sizeBefore - sizeAfter; i > 0 && lock.hasWaiters(this.notFull); i--) {
-					this.notFull.signal();
-				}
+				this.notFull.signalAll();
 			}
 			return changed;
+		}
+		finally {
+			lock.unlock();
+		}
+	}
+
+	@Override
+	public boolean removeIf(Predicate<? super T> filter) {
+		final ReentrantLock lock = this.reentrantLock;
+		lock.lock();
+		try {
+			boolean removed = super.removeIf(filter);
+			if (removed) {
+				this.notFull.signalAll();
+			}
+			return removed;
 		}
 		finally {
 			lock.unlock();
