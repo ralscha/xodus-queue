@@ -10,7 +10,7 @@
 
   <groupId>ch.rasc</groupId>
   <artifactId>xodus-queue</artifactId>
-  <version>2.0.1</version>
+  <version>2.0.2-SNAPSHOT</version>
 
   <name>Xodus-Queue</name>
   <description>Persistent java.util.Queue implementation with Xodus</description>
