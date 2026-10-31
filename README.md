@@ -54,12 +54,19 @@ The library is hosted on the Central Maven Repository
   <dependency>
     <groupId>ch.rasc</groupId>
     <artifactId>xodus-queue</artifactId>
-    <version>2.0.0</version>
+    <version>2.0.1</version>
   </dependency>
 ```
 
 
 ## Changelog
+
+### 2.0.1 - Sep 6, 2026
+  * Add constructors for `XodusBlockingQueue` without an explicit capacity limit
+  * Fix collection contracts for `size`, `toArray`, `containsAll`, and self-referential bulk operations
+  * Add transactional `removeIf` support and make snapshot iterators unmodifiable
+  * Validate capacity and serializer arguments before opening storage
+  * Fix remaining capacity calculation and improve blocking queue locking and producer signaling
 
 ### 2.0.0 - Sep 6, 2025
   * Minimum Java 17
