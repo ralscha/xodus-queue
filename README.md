@@ -48,6 +48,16 @@ try (XodusBlockingQueue<String> queue = new XodusBlockingQueue<>("./blocking_que
 ```
 
 
+### Queue depth and restart example
+
+Run the example with a directory and a command. Each invocation opens and closes the same persistent queue. `depth` prints its current depth without consuming entries. `drain 2` removes at most the first two entries after restart.
+
+```sh
+./mvnw -q test-compile exec:java -Dexec.classpathScope=test -Dexec.mainClass=ch.rasc.xodusqueue.example.QueueExample -Dexec.args="demo-queue add first"
+./mvnw -q test-compile exec:java -Dexec.classpathScope=test -Dexec.mainClass=ch.rasc.xodusqueue.example.QueueExample -Dexec.args="demo-queue depth"
+./mvnw -q test-compile exec:java -Dexec.classpathScope=test -Dexec.mainClass=ch.rasc.xodusqueue.example.QueueExample -Dexec.args="demo-queue drain 2"
+```
+
 ## Maven
 The library is hosted on the Central Maven Repository
 ```
